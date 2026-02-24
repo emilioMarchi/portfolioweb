@@ -40,8 +40,6 @@ export default function Home() {
         <ScrollSection id="contacto" direction="up">
           <Contacto />
         </ScrollSection>
-        
-        <ChatWidget />
       </main>
     </SmoothScroll>
   )

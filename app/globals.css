@@ -33,9 +33,9 @@
   --shadow-glow: 0 0 30px rgba(20, 184, 166, 0.4);
   --shadow-glow-accent: 0 0 20px rgba(45, 212, 191, 0.3);
   
-  /* Tipografía - Quicksand redondita y elegante */
-  --font-primary: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: 'Quicksand', var(--font-primary);
+  /* Tipografía - DM Sans lineal y elegante */
+  --font-primary: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'DM Sans', var(--font-primary);
   
   /* Espaciado */
   --space-xs: 0.25rem;
@@ -285,6 +285,15 @@ a:hover {
   }
   50% {
     opacity: 0.5;
+  }
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
   }
 }
 

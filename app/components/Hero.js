@@ -1,98 +1,281 @@
 'use client'
 
+import { useState, useEffect, useRef } from 'react'
 import { useChat } from './ChatContext'
 
 export default function Hero() {
-  const { openChat } = useChat()
+  const { openChat, closeChat } = useChat()
+  const [showContent, setShowContent] = useState(false)
+  const [message, setMessage] = useState('')
+  const [showChat, setShowChat] = useState(false)
+  
+  const fullMessage = "// LA TECNOLOGÍA DEBERÍA SER PARA TODOS.\n// CREAMOS HERRAMIENTAS QUE CONECTAN,\n// AUTOMATIZAN Y HACEN CRECER TU NEGOCIO."
+  
+  useEffect(() => {
+    let i = 0
+    const timer = setInterval(() => {
+      if (i <= fullMessage.length) {
+        setMessage(fullMessage.slice(0, i))
+        i++
+      } else {
+        clearInterval(timer)
+        setTimeout(() => setShowContent(true), 500)
+      }
+    }, 40)
+    
+    return () => clearInterval(timer)
+  }, [])
+
+  const handleChat = () => {
+    setShowChat(true)
+    openChat()
+  }
+
+  const handleCloseChat = () => {
+    setShowChat(false)
+    closeChat()
+  }
 
   return (
-    <section style={styles.hero}>
-      {/* Fondo con gradiente y partículas */}
-      <div style={styles.backgroundEffect} />
-      <div style={styles.gridPattern} />
-      
-      <div style={styles.container}>
-        {/* Badge de categoría */}
-        <div style={styles.badge}>
-          <span style={styles.badgeDot} />
-          Transformación Digital
-        </div>
+    <section id="hero" style={styles.hero}>
+      <div style={{
+        ...styles.container,
+        maxWidth: showChat ? '1200px' : '800px',
+        flexDirection: showChat ? 'row' : 'column',
+        alignItems: showChat ? 'flex-start' : 'center',
+        gap: showChat ? '50px' : '0'
+      }}>
         
-        {/* Título principal */}
-        <h1 style={styles.title}>
-          <span style={styles.titleGradient}>Sitios web</span> que{' '}
-          <span style={styles.titleAccent}>transforman</span>
-          {' '}tu negocio
-        </h1>
-        
-        {/* Subtítulo */}
-        <p style={styles.subtitle}>
-          Creamos experiencias digitales únicas con{' '}
-          <span style={styles.highlight}>inteligencia artificial</span> integrada.
-          Landing pages, tiendas online y soluciones a medida para emprendedores que quieren destacar.
-        </p>
-        
-        {/* Botones CTA */}
-        <div style={styles.buttons}>
-          <a href="#productos" style={styles.primaryButton}>
-            <span>Ver Productos</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </a>
-          <button onClick={openChat} style={styles.secondaryButton}>
-            <span>Hablar con OVNI</span>
-            <div style={styles.ovniMini}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <ellipse cx="12" cy="14" rx="8" ry="3"/>
-              </svg>
-            </div>
-          </button>
-        </div>
-        
-        {/* Features con iconos */}
-        <div style={styles.features}>
-          <div style={styles.feature}>
-            <div style={styles.featureIcon}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-              </svg>
-            </div>
-            <div style={styles.featureContent}>
-              <span style={styles.featureTitle}>Fast & Light</span>
-              <span style={styles.featureDesc}>Carga ultrarrápida</span>
-            </div>
+        {/* Contenido del Hero - se difumina cuando aparece el chat */}
+        <div style={{
+          ...styles.content,
+          flex: showChat ? '1' : 'none',
+          textAlign: showChat ? 'left' : 'center',
+          marginTop: showChat ? '20px' : '0',
+          opacity: showChat ? 0.5 : 1,
+          filter: showChat ? 'blur(4px)' : 'none',
+          pointerEvents: showChat ? 'none' : 'auto',
+          transition: 'all 0.5s ease',
+        }}>
+          <div style={{
+            ...styles.badge,
+            opacity: showContent ? 1 : 0,
+            alignSelf: showChat ? 'flex-start' : 'center',
+          }}>
+            <span style={styles.badgeDot} />
+            Transformación Digital
           </div>
-          <div style={styles.featureDivider} />
-          <div style={styles.feature}>
-            <div style={{...styles.featureIcon, background: 'linear-gradient(135deg, #6366f1 0%, #f472b6 100%)'}}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/>
-                <circle cx="7.5" cy="14.5" r="1.5"/>
-                <circle cx="16.5" cy="14.5" r="1.5"/>
+          
+          <pre style={{
+            ...styles.message,
+            fontSize: showChat ? 'clamp(1rem, 2vw, 1.3rem)' : 'clamp(1.2rem, 3vw, 1.8rem)',
+            textAlign: showChat ? 'left' : 'center',
+          }}>
+            {message}<span style={styles.cursor}>|</span>
+          </pre>
+          
+          <div style={{
+            ...styles.buttons,
+            opacity: showContent ? (showChat ? 0 : 1) : 0,
+            pointerEvents: showChat ? 'none' : 'auto',
+            justifyContent: showChat ? 'flex-start' : 'center',
+          }}>
+            <button onClick={handleChat} style={styles.primaryButton}>
+              <span>Chatear</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
-            </div>
-            <div style={styles.featureContent}>
-              <span style={styles.featureTitle}>IA Integrada</span>
-              <span style={styles.featureDesc}>Asistente conversacional</span>
-            </div>
-          </div>
-          <div style={styles.featureDivider} />
-          <div style={styles.feature}>
-            <div style={styles.featureIcon}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-                <path d="M12 18h.01"/>
-              </svg>
-            </div>
-            <div style={styles.featureContent}>
-              <span style={styles.featureTitle}>100% Responsive</span>
-              <span style={styles.featureDesc}>Diseño adaptativo</span>
-            </div>
+            </button>
+            <a href="#productos" style={styles.secondaryButton}>Ver más</a>
           </div>
         </div>
+        
+        {/* Chat */}
+        {showChat && (
+          <div style={styles.chatWrapper}>
+            <ChatPanel onClose={handleCloseChat} />
+          </div>
+        )}
       </div>
     </section>
+  )
+}
+
+function ChatPanel({ onClose }) {
+  const [messages, setMessages] = useState([
+    { role: 'bot', content: '', typing: true, fullContent: '¡Hola! Soy OVNI. ¿En qué puedo ayudarte hoy?' }
+  ])
+  const [input, setInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const scrollContainerRef = useRef(null)
+  
+  const userId = typeof window !== 'undefined' ? localStorage.getItem('chatbot_userId') || `user_${Date.now()}` : `user_${Date.now()}`
+
+  const scrollToBottom = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
+    }
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, isLoading])
+
+  // Efecto typewriter para el mensaje de bienvenida
+  useEffect(() => {
+    const welcomeMsg = messages[0]
+    if (welcomeMsg && welcomeMsg.typing && welcomeMsg.fullContent) {
+      let i = 0
+      const timer = setInterval(() => {
+        if (i <= welcomeMsg.fullContent.length) {
+          setMessages(prev => [{
+            ...prev[0],
+            content: welcomeMsg.fullContent.slice(0, i)
+          }])
+          i++
+        } else {
+          clearInterval(timer)
+          setMessages(prev => [{
+            ...prev[0],
+            typing: false
+          }])
+        }
+      }, 30)
+      return () => clearInterval(timer)
+    }
+  }, [])
+
+  const sendMessage = async (e) => {
+    e.preventDefault()
+    if (!input.trim() || isLoading) return
+    const userMessage = input.trim()
+    setInput('')
+    setMessages(prev => [...prev, { role: 'user', content: userMessage, typing: false }])
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, clientId: 'client1', message: userMessage })
+      })
+      const data = await response.json()
+      if (data.reply) {
+        // Agregar mensaje con efecto typewriter
+        setMessages(prev => [...prev, { role: 'bot', content: '', typing: true, fullContent: data.reply }])
+      }
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'bot', content: 'Error de conexión.', typing: false }])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Efecto typewriter para mensajes del bot
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1]
+    if (lastMsg && lastMsg.role === 'bot' && lastMsg.typing && lastMsg.fullContent) {
+      let i = 0
+      const timer = setInterval(() => {
+        if (i <= lastMsg.fullContent.length) {
+          setMessages(prev => {
+            const newMsgs = [...prev]
+            newMsgs[newMsgs.length - 1] = {
+              ...newMsgs[newMsgs.length - 1],
+              content: lastMsg.fullContent.slice(0, i)
+            }
+            return newMsgs
+          })
+          i++
+        } else {
+          clearInterval(timer)
+          setMessages(prev => {
+            const newMsgs = [...prev]
+            newMsgs[newMsgs.length - 1] = {
+              ...newMsgs[newMsgs.length - 1],
+              typing: false
+            }
+            return newMsgs
+          })
+        }
+      }, 20)
+      return () => clearInterval(timer)
+    }
+  }, [messages.length > 0 && messages[messages.length - 1].typing])
+
+  return (
+    <div style={styles.chatPanel}>
+      <div style={styles.chatHeader}>
+        <div style={styles.chatHeaderLeft}>
+          <div style={styles.chatAvatar}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+            </svg>
+          </div>
+          <span style={styles.chatTitle}>OVNI</span>
+        </div>
+        <button onClick={onClose} style={styles.chatClose}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div ref={scrollContainerRef} style={styles.chatMessages}>
+        {messages.map((msg, i) => (
+          <div key={i} style={{
+            ...styles.chatMsgWrapper,
+            justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+          }}>
+            {msg.role === 'bot' && (
+              <div style={styles.botAvatar}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                  <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+                </svg>
+              </div>
+            )}
+            <div style={{
+              ...styles.chatMsg,
+              backgroundColor: msg.role === 'user' ? 'transparent' : 'transparent',
+              border: msg.role === 'user' ? '1px solid rgba(20, 184, 166, 0.5)' : '1px solid rgba(20, 184, 166, 0.2)',
+              fontFamily: msg.role === 'bot' ? "'JetBrains Mono', monospace" : 'inherit',
+              fontSize: msg.role === 'bot' ? '14px' : '15px',
+            }}>
+              {msg.content}
+              {msg.typing && msg.role === 'bot' && (
+                <span style={styles.typingCursor}>|</span>
+              )}
+            </div>
+          </div>
+        ))}
+        {isLoading && (
+          <div style={styles.chatMsgWrapper}>
+            <div style={styles.botAvatar}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+              </svg>
+            </div>
+            <div style={{...styles.chatMsg, border: '1px solid rgba(20, 184, 166, 0.2)'}}>
+              <span style={styles.typing}>...</span>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <form onSubmit={sendMessage} style={styles.chatInputArea}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Escribe..."
+          style={styles.chatInput}
+        />
+        <button type="submit" style={styles.chatSendBtn}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+        </button>
+      </form>
+    </div>
   )
 }
 
@@ -101,184 +284,180 @@ const styles = {
     position: 'relative',
     minHeight: '100vh',
     width: '100%',
+    background: 'transparent',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
     overflow: 'hidden',
-    padding: 0,
-    margin: 0,
-    top: 0,
-  },
-  backgroundEffect: {
-    display: 'none',
-  },
-  gridPattern: {
-    display: 'none',
   },
   container: {
-    position: 'relative',
-    maxWidth: '900px',
+    width: '100%',
     margin: '0 auto',
-    textAlign: 'center',
-    zIndex: 1,
-    paddingTop: '120px',
+    padding: '40px',
+    display: 'flex',
+    transition: 'all 0.5s ease-in-out',
+    zIndex: 2,
+  },
+  content: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  chatWrapper: {
+    flex: '1.2',
+    maxWidth: '480px',
+    animation: 'fadeIn 0.4s ease',
+  },
+  chatPanel: {
+    background: 'transparent',
+    borderRadius: '20px',
+    border: '1px solid rgba(20, 184, 166, 0.3)',
+    padding: '15px',
+    boxShadow: '0 0 30px rgba(20, 184, 166, 0.1)',
+  },
+  message: {
+    fontFamily: "'JetBrains Mono', monospace",
+    color: '#5eead4',
+    lineHeight: 1.4,
+    whiteSpace: 'pre-wrap',
+    transition: 'all 0.5s ease',
+  },
+  cursor: {
+    animation: 'blink 1s infinite',
   },
   badge: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '8px 16px',
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-    border: '1px solid rgba(99, 102, 241, 0.2)',
+    padding: '6px 14px',
+    backgroundColor: 'rgba(20, 184, 166, 0.1)',
     borderRadius: '50px',
-    fontSize: '13px',
-    color: 'var(--color-primary-light)',
-    marginBottom: '2rem',
-    backdropFilter: 'blur(10px)',
+    color: '#5eead4',
+    fontSize: '11px',
+    marginBottom: '1rem',
+    width: 'fit-content',
   },
-  badgeDot: {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    backgroundColor: '#22c55e',
-    animation: 'pulse 2s infinite',
-  },
-  title: {
-    fontSize: 'clamp(2.5rem, 6vw, 4rem)',
-    fontWeight: '700',
-    color: 'var(--color-text)',
-    marginBottom: '1.5rem',
-    lineHeight: 1.1,
-  },
-  titleGradient: {
-    background: 'var(--gradient-primary)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-  },
-  titleAccent: {
-    color: '#f472b6',
-    position: 'relative',
-  },
-  subtitle: {
-    fontSize: 'clamp(1rem, 2vw, 1.25rem)',
-    color: 'var(--color-text-muted)',
-    marginBottom: '2.5rem',
-    lineHeight: 1.7,
-    maxWidth: '650px',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-  },
-  highlight: {
-    color: 'var(--color-primary-light)',
-    fontWeight: '600',
-  },
-  buttons: {
-    display: 'flex',
-    gap: '1rem',
-    justifyContent: 'center',
-    marginBottom: '4rem',
-    flexWrap: 'wrap',
-  },
+  badgeDot: { width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e' },
+  buttons: { display: 'flex', gap: '1rem', marginTop: '20px', transition: 'all 0.3s ease' },
   primaryButton: {
-    display: 'inline-flex',
+    padding: '0.8rem 1.5rem',
+    background: 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
+    border: 'none',
+    borderRadius: '30px',
+    color: '#fff',
+    cursor: 'pointer',
+    display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '1rem 2rem',
-    background: 'var(--gradient-primary)',
-    color: '#fff',
-    textDecoration: 'none',
-    borderRadius: 'var(--radius-md)',
-    fontWeight: '600',
-    fontSize: '1rem',
-    boxShadow: 'var(--shadow-glow)',
-    transition: 'all 0.3s ease',
   },
   secondaryButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '1rem 2rem',
-    backgroundColor: 'transparent',
-    color: 'var(--color-text)',
+    padding: '0.8rem 1.5rem',
+    border: '1px solid rgba(20, 184, 166, 0.3)',
+    borderRadius: '30px',
+    color: '#94a3b8',
     textDecoration: 'none',
-    borderRadius: 'var(--radius-md)',
-    fontWeight: '600',
-    fontSize: '1rem',
-    border: '1px solid var(--color-border)',
-    transition: 'all 0.3s ease',
   },
-  ovniMini: {
+  chatHeader: {
     display: 'flex',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    color: 'var(--color-primary-light)',
+    paddingBottom: '10px',
+    borderBottom: '1px solid rgba(20, 184, 166, 0.2)',
+    marginBottom: '10px',
   },
-  features: {
+  chatHeaderLeft: {
     display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '2rem',
-    flexWrap: 'wrap',
-    padding: '2rem',
-    backgroundColor: 'rgba(22, 33, 62, 0.5)',
-    borderRadius: 'var(--radius-lg)',
-    border: '1px solid var(--color-border)',
-    backdropFilter: 'blur(10px)',
-    maxWidth: '700px',
-    margin: '0 auto',
-  },
-  feature: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-  },
-  featureIcon: {
-    width: '48px',
-    height: '48px',
-    borderRadius: 'var(--radius-md)',
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'var(--color-primary-light)',
-  },
-  featureContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-  },
-  featureTitle: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: 'var(--color-text)',
-  },
-  featureDesc: {
-    fontSize: '12px',
-    color: 'var(--color-text-muted)',
-  },
-  featureDivider: {
-    width: '1px',
-    height: '40px',
-    backgroundColor: 'var(--color-border)',
-  },
-  scrollIndicator: {
-    position: 'absolute',
-    bottom: '2rem',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
     gap: '8px',
-    color: 'var(--color-text-muted)',
   },
-  scrollText: {
-    fontSize: '12px',
-    textTransform: 'uppercase',
-    letterSpacing: '1px',
+  chatAvatar: {
+    width: '22px',
+    height: '22px',
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  scrollArrow: {
-    animation: 'bounce 2s infinite',
+  chatTitle: {
+    color: '#5eead4',
+    fontWeight: '600',
+    fontSize: '13px',
+  },
+  chatClose: {
+    background: 'none',
+    border: 'none',
+    color: '#64748b',
+    cursor: 'pointer',
+    padding: '4px',
+    display: 'flex',
+  },
+  chatMessages: {
+    flex: 1,
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    maxHeight: '320px',
+  },
+  chatMsgWrapper: {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'flex-end',
+  },
+  botAvatar: {
+    width: '18px',
+    height: '18px',
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  chatMsg: {
+    padding: '12px 16px',
+    borderRadius: '14px',
+    maxWidth: '90%',
+    fontSize: '15px',
+    color: '#e2e8f0',
+    lineHeight: 1.5,
+    minHeight: '20px',
+  },
+  typingCursor: {
+    color: '#5eead4',
+    animation: 'blink 0.8s infinite',
+    marginLeft: '2px',
+  },
+  typing: {
+    color: '#64748b',
+    fontSize: '11px',
+  },
+  chatInputArea: {
+    display: 'flex',
+    gap: '8px',
+    marginTop: '10px',
+    paddingTop: '10px',
+    borderTop: '1px solid rgba(20, 184, 166, 0.2)',
+  },
+  chatInput: {
+    flex: 1,
+    padding: '10px 12px',
+    borderRadius: '20px',
+    border: '1px solid rgba(20, 184, 166, 0.3)',
+    background: 'transparent',
+    color: '#e2e8f0',
+    fontSize: '13px',
+    outline: 'none',
+  },
+  chatSendBtn: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '50%',
+    background: 'transparent',
+    border: '1px solid rgba(20, 184, 166, 0.4)',
+    color: '#5eead4',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }
