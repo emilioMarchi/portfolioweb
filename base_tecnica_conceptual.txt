@@ -1,0 +1,110 @@
+================================================================================
+ARQUITECTURA BASE - SISTEMA DIGITAL AUTOMATIZADO
+================================================================================
+
+1. CONCEPTO GENERAL
+================================================================================
+
+El proyecto consiste en un sistema digital modular que combina narrativa de marca, 
+estructura comercial y demostración técnica en un mismo entorno. No es una landing 
+tradicional, sino una infraestructura reutilizable orientada a:
+
+- Comunicación digital accesible para emprendedores.
+- Automatización de despliegue web.
+- Integración de agentes IA como parte estructural del producto.
+
+
+2. PRODUCTOS Y SERVICIOS OFRECIDOS
+================================================================================
+
+PRODUCTOS (Sitios web básicos pero funcionales):
+-------------------------------------------------
+1. Landing Pages - Sitios de una página para emprendedores y negocios pequeños
+2. Sitios Multipágina - Presencia web completa con múltiples secciones
+3. E-commerce Básico - Tiendas online funcionales para pequeños negocios
+4. Personalización - Servicios adicionales de customización sobre productos base
+
+SERVICIOS:
+----------
+1. Integraciones de IA - Implementación de agentes IA como la del portfolio
+2. Automatización - Procesos automatizados para negocios
+
+
+3. GENERADOR DE SITIOS (FEATURE DEMO)
+================================================================================
+
+El generador de sitios es una herramienta interna que sirve como demostración 
+técnica en tiempo real, permitiendo:
+
+- Interacción con agente IA desde la web
+- El usuario proporciona datos al agente
+- El agente genera/configura el sitio automáticamente
+- Preview en tiempo real del sitio generado
+
+Esto funciona como:
+- Demo técnica para mostrar capacidades
+- Herramienta de ventas interactiva
+- Potencial producto SaaS futuro
+
+
+4. CAPAS DEL SISTEMA
+================================================================================
+
+1) Capa Narrativa: Marca, posicionamiento y manifiesto.
+
+2) Capa Comercial: Productos, servicios y conversión.
+
+3) Capa Demostrativa: Arquitectura técnica, IA, automatización y RAG.
+
+
+5. ESTRUCTURA DEL SITIO (FRONTEND)
+================================================================================
+
+0. Gateway inicial con agente IA y opciones de navegación.
+
+1. Landing principal con secciones:
+   - Manifiesto.
+   - Productos principales (Landing, Multipágina, E-commerce, Personalización).
+   - Servicios (Integraciones IA, Automatización).
+   - Explicación del proceso.
+   - Sección técnica expandible.
+   - Llamado a acción.
+
+2. Componente de agente desacoplado y reutilizable.
+
+
+6. ARQUITECTURA TÉCNICA
+================================================================================
+
+FRONTEND:
+- SPA modular.
+- Sistema de componentes reutilizables.
+- Integración del agente como módulo independiente.
+
+BACKEND:
+- Endpoint de chat IA.
+- Sistema RAG conectado a base de conocimientos.
+- Endpoint de recomendación de productos.
+- Endpoint de generación automática de sitios.
+
+GENERADOR:
+- JSON base (plantilla estructural).
+- JSON de contenido.
+- Merge estructurado.
+- Build automático.
+- Deploy automatizado.
+
+
+7. ROADMAP MVP
+================================================================================
+
+Fase 1: Landing + agente funcional + explicación clara de productos.
+
+Fase 2: Recomendaciones dinámicas + integración más profunda con RAG.
+
+Fase 3: Evolución hacia sistema tipo SaaS con panel y métricas.
+
+
+================================================================================
+Documento generado como base para desarrollo asistido por IA.
+================================================================================

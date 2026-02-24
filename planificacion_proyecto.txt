@@ -1,0 +1,144 @@
+================================================================================
+PLANIFICACIÓN DEL PROYECTO - PORTFOLIO WEB
+================================================================================
+
+OBJETIVO: Crear un sitio web profesional para ofrecer productos y servicios,
+          integrando el agente IA y generador de sitios existentes.
+
+================================================================================
+COMPONENTES EXISTENTES - RUTAS
+================================================================================
+
+GENERADOR DE SITIOS:
+- Ruta: D:\Emi\apps\site-generator
+- Estado: MVP desarrollado
+- Función: Genera sitios a partir de datos
+
+AGENTE IA:
+- Ruta: D:\Emi\apps\chatbot-redes
+- Estado: MVP desarrollado
+- Función: Chatbot/agente conversacional
+
+NOTA: Estos proyectos se desarrollan por separado. Este portfolio los integra.
+
+================================================================================
+PRODUCTOS Y SERVICIOS A OFRECER
+================================================================================
+
+PRODUCTOS (Sitios web básicos pero funcionales):
+- Landing Pages - Sitios de una página para emprendedores y negocios pequeños
+- Sitios Multipágina - Presencia web completa con múltiples secciones
+- E-commerce Básico - Tiendas online funcionales para pequeños negocios
+- Personalización - Servicios adicionales de customización sobre productos base
+
+SERVICIOS:
+- Integraciones de IA - Implementación de agentes IA
+- Automatización - Procesos automatizados para negocios
+
+GENERADOR DE SITIOS (YA EXISTE - integrar):
+- Demo técnica del generador en el portfolio
+- El usuario interactúa con el agente
+- Preview en tiempo real del sitio generado
+
+================================================================================
+FASE 1: FUNDAMENTOS (Semana 1)
+================================================================================
+
+1.1 - Definir Contenido
+-----------------------
+- [ ] Redactar Manifiesto (propuesta de valor)
+- [ ] Describir el proceso de trabajo
+- [ ] Definir sección técnica
+- [ ] Crear CTA claro
+
+1.2 - Diseño Visual
+-------------------
+- [ ] Elegir paleta de colores y tipografía
+- [ ] Definir estructura de secciones
+- [ ] Crear/wireframe de la landing
+
+1.3 - Setup Técnico
+-------------------
+- [x] Inicializar proyecto Next.js
+- [x] Configurar estructura de carpetas
+- [ ] Configurar Git y repositorio
+
+
+================================================================================
+FASE 2: DESARROLLO FRONTEND (Semana 2)
+================================================================================
+
+2.1 - Estructura Base
+---------------------
+- [ ] Crear componentes base (Header, Footer, Layout)
+- [ ] Implementar sección Hero/Gateway
+- [ ] Crear sección Manifiesto
+- [ ] Crear sección Productos
+- [ ] Crear sección Servicios
+- [ ] Crear sección Proceso
+- [ ] Crear sección Técnica
+- [ ] Crear sección CTA
+
+2.2 - Widget Agente IA (EXISTE - integrar)
+------------------------------------------
+- [ ] Analizar código existente en D:\Emi\apps\chatbot-redes
+- [ ] Integrar componente de agente IA existente
+- [ ] Conectar con la API del agente
+
+
+================================================================================
+FASE 3: INTEGRACIÓN (Semana 3)
+================================================================================
+
+3.1 - Integración del Agente
+----------------------------
+- [ ] Conectar con el agente IA existente (D:\Emi\apps\chatbot-redes)
+- [ ] Configurar endpoint de comunicación
+
+3.2 - Integración del Generador
+--------------------------------
+- [ ] Analizar código existente en D:\Emi\apps\site-generator
+- [ ] Conectar con el generador de sitios existente
+- [ ] Implementar flujo de interacción
+- [ ] Configurar preview en tiempo real
+
+3.3 - Base de Conocimientos
+---------------------------
+- [ ] RAG existente
+- [ ] Integrar con la UI
+
+
+================================================================================
+FASE 4: OPTIMIZACIÓN Y LANZ Conectar con sistemaAMIENTO (Semana 4)
+================================================================================
+
+4.1 - Performance y SEO
+-----------------------
+- [ ] Optimizar imágenes y assets
+- [ ] Configurar meta tags
+- [ ] Mejorar tiempos de carga
+- [ ] Hacer responsive mobile
+
+4.2 - Despliegue
+----------------
+- [ ] Deploy en Vercel/Netlify
+- [ ] Configurar dominio
+- [ ] Testing final
+
+
+================================================================================
+PRIORIDADES INMEDIATAS
+================================================================================
+
+1. ✓ Proyecto Next.js inicializado
+2. ✓ Rutas de proyectos existentes documentadas
+3. ¿Cuál es tu propuesta de valor / Manifiesto?
+4. ¿Tenés algún sitio de referencia?
+
+================================================================================
+PRÓXIMOS PASOS
+================================================================================
+
+Continuamos con el diseño visual y estructura de la landing.
+
+================================================================================
