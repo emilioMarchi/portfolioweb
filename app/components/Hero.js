@@ -8,11 +8,68 @@ export default function Hero() {
   const [showContent, setShowContent] = useState(false)
   const [message, setMessage] = useState('')
   const [showChat, setShowChat] = useState(false)
-  
-  const fullMessage = "// LA TECNOLOGÍA DEBERÍA SER PARA TODOS.\n// CREAMOS HERRAMIENTAS QUE CONECTAN,\n// AUTOMATIZAN Y HACEN CRECER TU NEGOCIO."
-  
+  const [userId, setUserId] = useState(null)
+  const [apiKey, setApiKey] = useState(null)
+  const [isInitializing, setIsInitializing] = useState(true)
+
+  // Inicializar usuario con Firebase Auth
+  useEffect(() => {
+    const initUser = async () => {
+      if (typeof window === 'undefined') {
+        setIsInitializing(false)
+        return
+      }
+      
+      try {
+        // Importar Firebase dinámicamente
+        const { initializeApp } = await import('firebase/app')
+        const { getAuth, signInAnonymously } = await import('firebase/auth')
+        
+        const firebaseConfig = {
+          apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+          appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+        }
+        
+        // Solo inicializar si hay config válida
+        if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+          const app = initializeApp(firebaseConfig)
+          const auth = getAuth(app)
+          
+          // Login anónimo
+          const result = await signInAnonymously(auth)
+          const user = result.user
+          const token = await user.getIdToken()
+          
+          localStorage.setItem('chatbot_userId', user.uid)
+          localStorage.setItem('chatbot_authToken', token)
+          
+          setUserId(user.uid)
+          setApiKey(token) // Usar token como apiKey
+        } else {
+          throw new Error('Sin config de Firebase')
+        }
+      } catch (e) {
+        console.warn('Firebase Auth no disponible:', e)
+        // Fallback: usar sesión simple
+        let storedUserId = localStorage.getItem('chatbot_userId')
+        if (!storedUserId) {
+          storedUserId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+          localStorage.setItem('chatbot_userId', storedUserId)
+        }
+        setUserId(storedUserId)
+        setApiKey('fallback_' + storedUserId)
+      }
+      
+      setIsInitializing(false)
+    }
+    
+    initUser()
+  }, [])
+
   useEffect(() => {
     let i = 0
+    const fullMessage = "// LA TECNOLOGÍA DEBERÍA SER PARA TODOS.\n// CREAMOS HERRAMIENTAS QUE CONECTAN,\n// AUTOMATIZAN Y HACEN CRECER TU NEGOCIO."
     const timer = setInterval(() => {
       if (i <= fullMessage.length) {
         setMessage(fullMessage.slice(0, i))
@@ -46,7 +103,6 @@ export default function Hero() {
         gap: showChat ? '50px' : '0'
       }}>
         
-        {/* Contenido del Hero - se difumina cuando aparece el chat */}
         <div style={{
           ...styles.content,
           flex: showChat ? '1' : 'none',
@@ -90,10 +146,9 @@ export default function Hero() {
           </div>
         </div>
         
-        {/* Chat */}
-        {showChat && (
+        {showChat && !isInitializing && (
           <div style={styles.chatWrapper}>
-            <ChatPanel onClose={handleCloseChat} />
+            <ChatPanel userId={userId} apiKey={apiKey} onClose={handleCloseChat} />
           </div>
         )}
       </div>
@@ -101,15 +156,13 @@ export default function Hero() {
   )
 }
 
-function ChatPanel({ onClose }) {
+function ChatPanel({ userId, apiKey, onClose }) {
   const [messages, setMessages] = useState([
     { role: 'bot', content: '', typing: true, fullContent: '¡Hola! Soy OVNI. ¿En qué puedo ayudarte hoy?' }
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const scrollContainerRef = useRef(null)
-  
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('chatbot_userId') || `user_${Date.now()}` : `user_${Date.now()}`
 
   const scrollToBottom = () => {
     if (scrollContainerRef.current) {
@@ -121,7 +174,6 @@ function ChatPanel({ onClose }) {
     scrollToBottom()
   }, [messages, isLoading])
 
-  // Efecto typewriter para el mensaje de bienvenida
   useEffect(() => {
     const welcomeMsg = messages[0]
     if (welcomeMsg && welcomeMsg.typing && welcomeMsg.fullContent) {
@@ -147,31 +199,44 @@ function ChatPanel({ onClose }) {
 
   const sendMessage = async (e) => {
     e.preventDefault()
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || isLoading || !userId) return
     const userMessage = input.trim()
     setInput('')
     setMessages(prev => [...prev, { role: 'user', content: userMessage, typing: false }])
+    
+    // Primero mostrar estado "cargando" sin mensaje
+    setMessages(prev => [...prev, { role: 'bot', content: '', loading: true, typing: false }])
     setIsLoading(true)
 
     try {
       const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, clientId: 'client1', message: userMessage })
+        body: JSON.stringify({ 
+          userId, 
+          clientId: 'client1', 
+          message: userMessage,
+          apiKey
+        })
       })
       const data = await response.json()
       if (data.reply) {
-        // Agregar mensaje con efecto typewriter
-        setMessages(prev => [...prev, { role: 'bot', content: '', typing: true, fullContent: data.reply }])
+        // Reemplazar el mensaje de loading con el real y typewriter
+        setMessages(prev => {
+          const newMsgs = prev.filter(m => !m.loading)
+          return [...newMsgs, { role: 'bot', content: '', typing: true, fullContent: data.reply }]
+        })
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'bot', content: 'Error de conexión.', typing: false }])
+      setMessages(prev => {
+        const newMsgs = prev.filter(m => !m.loading)
+        return [...newMsgs, { role: 'bot', content: 'Error de conexión.', typing: false }]
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Efecto typewriter para mensajes del bot
   useEffect(() => {
     const lastMsg = messages[messages.length - 1]
     if (lastMsg && lastMsg.role === 'bot' && lastMsg.typing && lastMsg.fullContent) {
@@ -201,7 +266,7 @@ function ChatPanel({ onClose }) {
       }, 20)
       return () => clearInterval(timer)
     }
-  }, [messages.length > 0 && messages[messages.length - 1].typing])
+  }, [messages.length > 0 && messages[messages.length - 1]?.typing])
 
   return (
     <div style={styles.chatPanel}>
@@ -227,7 +292,7 @@ function ChatPanel({ onClose }) {
             ...styles.chatMsgWrapper,
             justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
           }}>
-            {msg.role === 'bot' && (
+            {msg.role === 'bot' && !msg.loading && (
               <div style={styles.botAvatar}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
                   <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
@@ -236,30 +301,29 @@ function ChatPanel({ onClose }) {
             )}
             <div style={{
               ...styles.chatMsg,
-              backgroundColor: msg.role === 'user' ? 'transparent' : 'transparent',
+              backgroundColor: 'transparent',
               border: msg.role === 'user' ? '1px solid rgba(20, 184, 166, 0.5)' : '1px solid rgba(20, 184, 166, 0.2)',
               fontFamily: msg.role === 'bot' ? "'JetBrains Mono', monospace" : 'inherit',
               fontSize: msg.role === 'bot' ? '14px' : '15px',
             }}>
-              {msg.content}
-              {msg.typing && msg.role === 'bot' && (
-                <span style={styles.typingCursor}>|</span>
+              {/* Loading: mostrar animación de puntos */}
+              {msg.loading ? (
+                <span style={styles.dotsLoading}>
+                  <span style={{...styles.dot, animationDelay: '0s'}}>.</span>
+                  <span style={{...styles.dot, animationDelay: '0.2s'}}>.</span>
+                  <span style={{...styles.dot, animationDelay: '0.4s'}}>.</span>
+                </span>
+              ) : (
+                <>
+                  {msg.content}
+                  {msg.typing && msg.role === 'bot' && (
+                    <span style={styles.typingCursor}>|</span>
+                  )}
+                </>
               )}
             </div>
           </div>
         ))}
-        {isLoading && (
-          <div style={styles.chatMsgWrapper}>
-            <div style={styles.botAvatar}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
-              </svg>
-            </div>
-            <div style={{...styles.chatMsg, border: '1px solid rgba(20, 184, 166, 0.2)'}}>
-              <span style={styles.typing}>...</span>
-            </div>
-          </div>
-        )}
       </div>
       
       <form onSubmit={sendMessage} style={styles.chatInputArea}>
@@ -430,6 +494,16 @@ const styles = {
   typing: {
     color: '#64748b',
     fontSize: '11px',
+  },
+  dotsLoading: {
+    display: 'inline-flex',
+    gap: '2px',
+  },
+  dot: {
+    color: '#5eead4',
+    fontSize: '18px',
+    fontWeight: 'bold',
+    animation: 'bounce 1.4s infinite ease-in-out both',
   },
   chatInputArea: {
     display: 'flex',
