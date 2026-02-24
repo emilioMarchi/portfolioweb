@@ -1,9 +1,17 @@
+'use client'
+
 const productos = [
   {
     id: 1,
     titulo: 'Landing Pages',
     descripcion: 'Sitios de una página optimizados para convertir visitantes en clientes.',
     precio: 'Desde $XXX',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
+    ),
+    color: '#14b8a6',
     caracteristicas: ['Diseño responsive', 'SEO básico', 'Formulario de contacto', '1 semana de entrega'],
   },
   {
@@ -11,13 +19,28 @@ const productos = [
     titulo: 'Sitios Multipágina',
     descripcion: 'Presencia web completa con múltiples secciones y páginas.',
     precio: 'Desde $XXX',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M3 9h18M9 21V9"/>
+      </svg>
+    ),
+    color: '#06b6d4',
     caracteristicas: ['Hasta 5 páginas', 'Diseño personalizado', 'SEO avanzado', '2 semanas de entrega'],
   },
   {
     id: 3,
-    titulo: 'E-commerce Básico',
+    titulo: 'E-commerce',
     descripcion: 'Tienda online funcional para vender tus productos.',
     precio: 'Desde $XXX',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="9" cy="21" r="1"/>
+        <circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      </svg>
+    ),
+    color: '#22c55e',
     caracteristicas: ['Carrito de compras', 'Pasarela de pago', 'Gestión de productos', '3 semanas de entrega'],
   },
   {
@@ -25,6 +48,12 @@ const productos = [
     titulo: 'Personalización',
     descripcion: 'Customización adicional sobre cualquiera de nuestros productos base.',
     precio: 'A definir',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    ),
+    color: '#f472b6',
     caracteristicas: ['Funcionalidades extra', 'Integraciones', 'Modificaciones de diseño', 'Plazo a definir'],
   },
 ]
@@ -33,22 +62,70 @@ export default function Productos() {
   return (
     <section id="productos" style={styles.section}>
       <div style={styles.container}>
-        <h2 style={styles.title}>Productos</h2>
-        <p style={styles.subtitle}>
-          Sitios web básicos pero funcionales, adaptados a las necesidades de emprendedores y negocios pequeños.
-        </p>
+        <div style={styles.header}>
+          <span style={styles.badge}>NUESTROS PRODUCTOS</span>
+          <h2 style={styles.title}>
+            Soluciones digitales para <span style={styles.titleAccent}>tu negocio</span>
+          </h2>
+          <p style={styles.subtitle}>
+            Elige la opción que mejor se adapte a tus necesidades.
+          </p>
+        </div>
+        
         <div style={styles.grid}>
-          {productos.map((producto) => (
-            <div key={producto.id} style={styles.card}>
+          {productos.map((producto, index) => (
+            <div 
+              key={producto.id} 
+              style={{
+                ...styles.card,
+                animationDelay: `${index * 0.1}s`
+              }}
+            >
+              <div style={{
+                ...styles.cardGlow,
+                background: `linear-gradient(90deg, transparent, ${producto.color}, transparent)`
+              }} />
+              
+              <div style={{
+                ...styles.iconContainer,
+                borderColor: `${producto.color}40`,
+                boxShadow: `0 0 20px ${producto.color}20`,
+                color: producto.color,
+              }}>
+                {producto.icon}
+              </div>
+              
               <h3 style={styles.cardTitle}>{producto.titulo}</h3>
               <p style={styles.cardDesc}>{producto.descripcion}</p>
-              <p style={styles.price}>{producto.precio}</p>
+              
+              <div style={{
+                ...styles.priceContainer,
+                borderColor: `${producto.color}30`
+              }}>
+                <span style={{
+                  ...styles.price,
+                  color: producto.color
+                }}>{producto.precio}</span>
+              </div>
+              
               <ul style={styles.features}>
-                {producto.caracteristicas.map((feature, index) => (
-                  <li key={index} style={styles.feature}>✓ {feature}</li>
+                {producto.caracteristicas.map((feature, idx) => (
+                  <li key={idx} style={styles.feature}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                      <path d="M20 6L9 17l-5-5" stroke={producto.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    {feature}
+                  </li>
                 ))}
               </ul>
-              <a href="#contacto" style={styles.button}>Solicitar</a>
+              
+              <a href="#contacto" style={{
+                ...styles.button,
+                borderColor: `${producto.color}50`,
+                color: producto.color,
+              }}>
+                Solicitar Ahora
+              </a>
             </div>
           ))}
         </div>
@@ -59,70 +136,126 @@ export default function Productos() {
 
 const styles = {
   section: {
-    padding: '4rem 2rem',
-    backgroundColor: '#fff',
+    position: 'relative',
+    padding: '6rem 2rem',
+    backgroundColor: 'transparent',
   },
   container: {
     maxWidth: '1200px',
     margin: '0 auto',
   },
-  title: {
-    fontSize: '2.5rem',
+  header: {
     textAlign: 'center',
+    marginBottom: '4rem',
+  },
+  badge: {
+    display: 'inline-block',
+    padding: '6px 14px',
+    backgroundColor: 'rgba(20, 184, 166, 0.1)',
+    border: '1px solid rgba(20, 184, 166, 0.2)',
+    borderRadius: '50px',
+    fontSize: '11px',
+    fontWeight: 600,
+    color: 'var(--color-primary-light)',
+    letterSpacing: '1.5px',
     marginBottom: '1rem',
-    color: '#1a1a1a',
+  },
+  title: {
+    fontSize: 'clamp(2rem, 4vw, 2.5rem)',
+    fontWeight: 700,
+    color: 'var(--color-text)',
+    marginBottom: '0.75rem',
+  },
+  titleAccent: {
+    color: 'var(--color-primary-light)',
   },
   subtitle: {
     textAlign: 'center',
-    color: '#666',
-    marginBottom: '3rem',
-    fontSize: '1.125rem',
+    color: 'var(--color-text-muted)',
+    fontSize: '1rem',
+    maxWidth: '500px',
+    margin: '0 auto',
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '2rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+    gap: '1.5rem',
   },
   card: {
-    padding: '2rem',
-    borderRadius: '12px',
-    border: '1px solid #e5e5e5',
-    backgroundColor: '#fff',
-    transition: 'box-shadow 0.3s',
+    position: 'relative',
+    padding: '1.75rem',
+    borderRadius: '20px',
+    backgroundColor: 'rgba(20, 184, 166, 0.03)',
+    border: '1px solid rgba(20, 184, 166, 0.15)',
+    backdropFilter: 'blur(10px)',
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  cardGlow: {
+    position: 'absolute',
+    top: 0,
+    left: '10%',
+    right: '10%',
+    height: '1px',
+    opacity: 0.5,
+  },
+  iconContainer: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '14px',
+    border: '1px solid',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '1.25rem',
   },
   cardTitle: {
-    fontSize: '1.5rem',
+    fontSize: '1.2rem',
+    fontWeight: 600,
+    color: 'var(--color-text)',
     marginBottom: '0.5rem',
-    color: '#1a1a1a',
   },
   cardDesc: {
-    color: '#666',
+    color: 'var(--color-text-muted)',
     marginBottom: '1rem',
-    fontSize: '0.875rem',
+    fontSize: '0.9rem',
+    lineHeight: 1.5,
+    flex: 1,
+  },
+  priceContainer: {
+    marginBottom: '1rem',
+    paddingTop: '0.75rem',
+    borderTop: '1px solid',
   },
   price: {
     fontSize: '1.25rem',
-    fontWeight: 'bold',
-    color: '#0070f3',
-    marginBottom: '1rem',
+    fontWeight: 700,
   },
   features: {
     listStyle: 'none',
-    marginBottom: '1.5rem',
+    marginBottom: '1.25rem',
+    padding: 0,
   },
   feature: {
-    fontSize: '0.875rem',
-    color: '#666',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '0.85rem',
+    color: 'var(--color-text-muted)',
     marginBottom: '0.5rem',
   },
   button: {
-    display: 'block',
-    textAlign: 'center',
-    padding: '0.75rem 1.5rem',
-    backgroundColor: '#0070f3',
-    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0.875rem',
+    backgroundColor: 'transparent',
+    border: '1px solid',
+    borderRadius: '12px',
+    fontWeight: 600,
+    fontSize: '0.9rem',
     textDecoration: 'none',
-    borderRadius: '6px',
-    fontWeight: '500',
+    transition: 'all 0.3s ease',
   },
 }
