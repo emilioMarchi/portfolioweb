@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+
 const servicios = [
   {
     id: 1,
@@ -53,9 +55,23 @@ const servicios = [
 ]
 
 export default function Servicios() {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
     <section id="servicios" style={styles.section}>
-      <div style={styles.container}>
+      <div style={{
+        ...styles.container,
+        paddingLeft: isMobile ? '1rem' : '0',
+        paddingRight: isMobile ? '1rem' : '0',
+        maxWidth: isMobile ? '100%' : '1000px',
+      }}>
         <div style={styles.header}>
           <span style={styles.badge}>SERVICIOS</span>
           <h2 style={styles.title}>
@@ -63,7 +79,10 @@ export default function Servicios() {
           </h2>
         </div>
         
-        <div style={styles.grid}>
+        <div style={{
+          ...styles.grid,
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+        }}>
           {servicios.map((servicio) => (
             <div 
               key={servicio.id} 
@@ -102,12 +121,19 @@ export default function Servicios() {
 const styles = {
   section: {
     position: 'relative',
-    padding: '6rem 2rem',
+    padding: '6rem 1rem',
     backgroundColor: 'transparent',
+    overflow: 'hidden',
+    width: '100%',
+    maxWidth: '100vw',
   },
   container: {
     maxWidth: '1000px',
     margin: '0 auto',
+    paddingLeft: '1rem',
+    paddingRight: '1rem',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   header: {
     textAlign: 'center',
@@ -135,7 +161,6 @@ const styles = {
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
     gap: '1rem',
   },
   card: {

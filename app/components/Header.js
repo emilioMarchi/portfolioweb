@@ -4,22 +4,35 @@ import { useState, useEffect } from 'react'
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50)
     }
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    handleScroll()
+    checkMobile()
     window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    window.addEventListener('resize', checkMobile)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', checkMobile)
+    }
   }, [])
+
+  const closeMenu = () => setMobileMenuOpen(false)
 
   return (
     <header style={{
       ...styles.header,
       opacity: isScrolled ? 0.95 : 0.9,
     }}>
-      <div style={styles.container}>
-        <a href="#" style={styles.logo}>
+      <div style={{...styles.container, ...(isMobile ? styles.containerMobile : {})}}>
+        <a href="#" style={styles.logo} onClick={closeMenu}>
           <div style={styles.logoIcon}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <ellipse cx="12" cy="14" rx="8" ry="3" fill="url(#ovniGrad2)" opacity="0.5"/>
@@ -38,21 +51,45 @@ export default function Header() {
           <span style={styles.logoText}>OVNI</span>
         </a>
         
-        <nav style={styles.nav}>
-          <a href="#productos" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Productos</a>
-          <a href="#servicios" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Servicios</a>
-          <a href="#proceso" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Proceso</a>
-          <a href="#tecnica" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Técnica</a>
-          <a href="#contacto" style={styles.ctaButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.3)'; e.target.style.boxShadow = '0 0 30px rgba(20, 184, 166, 0.5)'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.15)'; e.target.style.boxShadow = '0 0 20px rgba(20, 184, 166, 0.25)'; }}>
-            Contacto
-          </a>
-        </nav>
+        {/* Desktop Nav */}
+        {!isMobile && (
+          <nav style={styles.nav}>
+            <a href="#productos" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Productos</a>
+            <a href="#servicios" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Servicios</a>
+            <a href="#proceso" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Proceso</a>
+            <a href="#tecnica" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Técnica</a>
+            <a href="#contacto" style={styles.ctaButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.3)'; e.target.style.boxShadow = '0 0 30px rgba(20, 184, 166, 0.5)'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.15)'; e.target.style.boxShadow = '0 0 20px rgba(20, 184, 166, 0.25)'; }}>
+              Contacto
+            </a>
+          </nav>
+        )}
         
-        <button style={styles.mobileMenuBtn}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 12h18M3 6h18M3 18h18"/>
-          </svg>
-        </button>
+        {/* Mobile Menu Button */}
+        {isMobile && (
+          <button 
+            style={styles.mobileMenuBtn} 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              {mobileMenuOpen ? (
+                <path d="M6 18L18 6M6 6l12 12"/>
+              ) : (
+                <path d="M3 12h18M3 6h18M3 18h18"/>
+              )}
+            </svg>
+          </button>
+        )}
+        
+        {/* Mobile Menu */}
+        {isMobile && mobileMenuOpen && (
+          <div style={styles.mobileMenu}>
+            <a href="#productos" style={styles.mobileNavLink} onClick={closeMenu}>Productos</a>
+            <a href="#servicios" style={styles.mobileNavLink} onClick={closeMenu}>Servicios</a>
+            <a href="#proceso" style={styles.mobileNavLink} onClick={closeMenu}>Proceso</a>
+            <a href="#tecnica" style={styles.mobileNavLink} onClick={closeMenu}>Técnica</a>
+            <a href="#contacto" style={styles.mobileCtaButton} onClick={closeMenu}>Contacto</a>
+          </div>
+        )}
       </div>
     </header>
   )
@@ -67,7 +104,7 @@ const styles = {
     zIndex: 100,
     padding: '0.875rem 0',
     transition: 'all 0.3s ease',
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(15, 15, 26, 0.95)',
   },
   container: {
     maxWidth: '1200px',
@@ -76,6 +113,7 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    position: 'relative',
   },
   logo: {
     display: 'flex',
@@ -126,11 +164,49 @@ const styles = {
     boxShadow: '0 0 20px rgba(20, 184, 166, 0.25)',
   },
   mobileMenuBtn: {
-    display: 'none',
+    display: 'flex',
     padding: '8px',
     background: 'none',
     border: 'none',
     color: 'var(--color-text)',
     cursor: 'pointer',
+  },
+  containerMobile: {
+    padding: '0 1rem',
+    width: '100%',
+    flexWrap: 'wrap',
+  },
+  mobileMenu: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(15, 15, 26, 0.98)',
+    padding: '1rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    borderTop: '1px solid rgba(20, 184, 166, 0.2)',
+    animation: 'fadeIn 0.3s ease',
+  },
+  mobileNavLink: {
+    padding: '0.75rem 1rem',
+    color: '#94a3b8',
+    fontSize: '1rem',
+    textDecoration: 'none',
+    borderRadius: '8px',
+    transition: 'all 0.2s ease',
+  },
+  mobileCtaButton: {
+    padding: '0.75rem 1rem',
+    backgroundColor: 'rgba(20, 184, 166, 0.15)',
+    border: '1px solid rgba(20, 184, 166, 0.6)',
+    borderRadius: '8px',
+    color: '#5eead4',
+    fontSize: '1rem',
+    fontWeight: 600,
+    textDecoration: 'none',
+    textAlign: 'center',
+    marginTop: '0.5rem',
   },
 }

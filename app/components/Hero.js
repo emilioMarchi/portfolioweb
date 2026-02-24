@@ -93,14 +93,25 @@ export default function Hero() {
     closeChat()
   }
 
+  // Detectar si es mobile
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
     <section id="hero" style={styles.hero}>
       <div style={{
         ...styles.container,
-        maxWidth: showChat ? '1200px' : '800px',
-        flexDirection: showChat ? 'row' : 'column',
-        alignItems: showChat ? 'flex-start' : 'center',
-        gap: showChat ? '50px' : '0'
+        ...(isMobile ? styles.containerMobile : {}),
+        maxWidth: showChat ? (isMobile ? '100%' : '1200px') : (isMobile ? '100%' : '800px'),
+        flexDirection: showChat ? (isMobile ? 'column' : 'row') : 'column',
+        alignItems: showChat ? (isMobile ? 'center' : 'flex-start') : 'center',
+        gap: showChat ? (isMobile ? '20px' : '50px') : '0',
+        padding: isMobile ? '1rem' : '40px',
       }}>
         
         <div style={{
@@ -147,8 +158,8 @@ export default function Hero() {
         </div>
         
         {showChat && !isInitializing && (
-          <div style={styles.chatWrapper}>
-            <ChatPanel userId={userId} apiKey={apiKey} onClose={handleCloseChat} />
+          <div style={isMobile ? styles.chatWrapperMobile : styles.chatWrapper}>
+            <ChatPanel userId={userId} apiKey={apiKey} onClose={handleCloseChat} isMobile={isMobile} />
           </div>
         )}
       </div>
@@ -156,7 +167,7 @@ export default function Hero() {
   )
 }
 
-function ChatPanel({ userId, apiKey, onClose }) {
+function ChatPanel({ userId, apiKey, onClose, isMobile }) {
   const [messages, setMessages] = useState([
     { role: 'bot', content: '', typing: true, fullContent: '¡Hola! Soy OVNI. ¿En qué puedo ayudarte hoy?' }
   ])
@@ -533,5 +544,22 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Mobile styles
+  containerMobile: {
+    paddingTop: '100px',
+    paddingLeft: '1rem',
+    paddingRight: '1rem',
+    minHeight: '100vh',
+    textAlign: 'center',
+    justifyContent: 'center',
+    maxWidth: '100vw',
+    overflow: 'hidden',
+    boxSizing: 'border-box',
+  },
+  chatWrapperMobile: {
+    width: '100%',
+    maxWidth: '100%',
+    animation: 'fadeIn 0.4s ease',
   },
 }

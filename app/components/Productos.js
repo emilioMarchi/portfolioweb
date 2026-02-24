@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+
 const productos = [
   {
     id: 1,
@@ -21,7 +23,7 @@ const productos = [
     precio: 'Desde $XXX',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
+       3" y=" <rect x="3" width="18" height="18" rx="2"/>
         <path d="M3 9h18M9 21V9"/>
       </svg>
     ),
@@ -59,9 +61,22 @@ const productos = [
 ]
 
 export default function Productos() {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
-    <section id="productos" style={styles.section}>
-      <div style={styles.container}>
+    <section id="productos" style={{...styles.section, marginLeft: 'auto', marginRight: 'auto'}}>
+      <div style={{
+        ...styles.container,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+      }}>
         <div style={styles.header}>
           <span style={styles.badge}>NUESTROS PRODUCTOS</span>
           <h2 style={styles.title}>
@@ -137,12 +152,16 @@ export default function Productos() {
 const styles = {
   section: {
     position: 'relative',
-    padding: '6rem 2rem',
+    padding: '3rem 1.5rem',
     backgroundColor: 'transparent',
+    overflow: 'hidden',
+    width: '100%',
   },
   container: {
     maxWidth: '1200px',
     margin: '0 auto',
+    padding: '0 1rem',
+    width: '100%',
   },
   header: {
     textAlign: 'center',
@@ -178,8 +197,8 @@ const styles = {
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-    gap: '1.5rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '1rem',
   },
   card: {
     position: 'relative',

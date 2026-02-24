@@ -1,11 +1,22 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+
 export default function Contacto() {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
     <section id="contacto" style={styles.section}>
-      {/* Fondo decorativo */}
       <div style={styles.backgroundGlow} />
       
-      <div style={styles.container}>
-        {/* Header */}
+      <div style={{...styles.container, ...(isMobile ? styles.containerMobile : {})}}>
         <div style={styles.header}>
           <span style={styles.badge}>CONTACTO</span>
           <h2 style={styles.title}>
@@ -17,8 +28,11 @@ export default function Contacto() {
           </p>
         </div>
         
-        <div style={styles.contentWrapper}>
-          {/* Info de contacto */}
+        <div style={{
+          ...styles.contentWrapper,
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr',
+          gap: isMobile ? '2rem' : '3rem',
+        }}>
           <div style={styles.infoSection}>
             <div style={styles.infoCard}>
               <div style={styles.infoIcon}>
@@ -60,9 +74,12 @@ export default function Contacto() {
             </div>
           </div>
           
-          {/* Formulario */}
           <form style={styles.form}>
-            <div style={styles.formGrid}>
+            <div style={{
+              ...styles.formGrid,
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+              gap: isMobile ? '1rem' : '1.5rem',
+            }}>
               <div style={styles.field}>
                 <label style={styles.label} htmlFor="nombre">Nombre</label>
                 <input 
@@ -90,7 +107,7 @@ export default function Contacto() {
                 id="mensaje" 
                 name="mensaje" 
                 style={styles.textarea}
-                placeholder="Cuéntame sobre tu proyecto, tus objetivos y cómo puedo ayudarte..."
+                placeholder="Cuéntame sobre tu proyecto..."
                 rows={5}
               />
             </div>
@@ -103,7 +120,6 @@ export default function Contacto() {
           </form>
         </div>
         
-        {/* CTA alternativo */}
         <div style={styles.alternative}>
           <span style={styles.alternativeText}>O también puedes</span>
           <a href="#" style={styles.chatLink}>
@@ -140,6 +156,9 @@ const styles = {
     margin: '0 auto',
     position: 'relative',
     zIndex: 1,
+  },
+  containerMobile: {
+    padding: '0 1rem',
   },
   header: {
     textAlign: 'center',

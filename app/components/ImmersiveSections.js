@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Hero from './Hero'
 import Productos from './Productos'
 import Servicios from './Servicios'
@@ -8,7 +8,6 @@ import Proceso from './Proceso'
 import Tecnica from './Tecnica'
 import Contacto from './Contacto'
 
-// Direcciones de entrada para cada sección (simulando espacio 3D)
 const sectionDirections = {
   hero: { enterFrom: 'fade', direction: 'center' },
   productos: { enterFrom: 'left', direction: 'right' },
@@ -34,14 +33,12 @@ export default function ImmersiveSections() {
     { id: 'contacto', component: <Contacto /> },
   ]
 
-  // Scroll a una sección específica
   const scrollToSection = (index, direction = 'down') => {
     if (isTransitioning || index === activeSection) return
     
     setIsTransitioning(true)
     setScrollDirection(direction)
     
-    // Scroll directo
     window.scrollTo({
       top: window.innerHeight * index,
       behavior: 'smooth'
@@ -52,7 +49,6 @@ export default function ImmersiveSections() {
     }, 1000)
   }
 
-  // Manejar scroll - detectar sección activa
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY
@@ -67,7 +63,6 @@ export default function ImmersiveSections() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [sections.length])
 
-  // Detectar dirección del scroll
   const [scrollDirection, setScrollDirection] = useState('down')
   
   useEffect(() => {
@@ -83,7 +78,6 @@ export default function ImmersiveSections() {
     return () => window.removeEventListener('scroll', updateDirection)
   }, [])
 
-  // Indicadores de navegación (dots)
   const renderNavigationDots = () => (
     <div style={styles.navDots}>
       {sections.map((section, index) => (
@@ -101,40 +95,23 @@ export default function ImmersiveSections() {
     </div>
   )
 
-  // Barra de progreso
   const renderProgressBar = () => (
     <div style={styles.progressContainer}>
       <div style={styles.progressBar}>
-        <div 
-          style={{
-            ...styles.progressFill,
-            width: `${scrollProgress * 100}%`
-          }} 
-        />
+        <div style={{ ...styles.progressFill, width: `${scrollProgress * 100}%` }} />
       </div>
-      <span style={styles.progressText}>
-        {Math.round(scrollProgress * 100)}%
-      </span>
+      <span style={styles.progressText}>{Math.round(scrollProgress * 100)}%</span>
     </div>
   )
 
-  // Indicador de dirección de scroll
   const renderScrollIndicator = () => (
     <div style={styles.scrollIndicator}>
-      <div style={{
-        ...styles.arrowUp,
-        opacity: scrollDirection === 'up' ? 1 : 0.3,
-        transform: 'translateY(5px)'
-      }}>
+      <div style={{ ...styles.arrowUp, opacity: scrollDirection === 'up' ? 1 : 0.3 }}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 19V5M5 12l7-7 7 7"/>
         </svg>
       </div>
-      <div style={{
-        ...styles.arrowDown,
-        opacity: scrollDirection === 'down' ? 1 : 0.3,
-        transform: 'translateY(-5px)'
-      }}>
+      <div style={{ ...styles.arrowDown, opacity: scrollDirection === 'down' ? 1 : 0.3 }}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 5v14M19 12l-7 7-7-7"/>
         </svg>
@@ -142,19 +119,11 @@ export default function ImmersiveSections() {
     </div>
   )
 
-  // Mini mapa de secciones
   const renderSectionMap = () => (
     <div style={styles.sectionMap}>
       <span style={styles.sectionMapTitle}>MAPA</span>
       {sections.map((section, index) => (
-        <div 
-          key={section.id}
-          style={{
-            ...styles.mapItem,
-            opacity: activeSection === index ? 1 : 0.4,
-            transform: activeSection === index ? 'scale(1.2)' : 'scale(1)'
-          }}
-        >
+        <div key={section.id} style={{ ...styles.mapItem, opacity: activeSection === index ? 1 : 0.4 }}>
           <span style={styles.mapIndex}>0{index + 1}</span>
           <span style={styles.mapName}>{section.id}</span>
         </div>
@@ -164,65 +133,13 @@ export default function ImmersiveSections() {
 
   return (
     <div ref={containerRef} style={styles.container}>
-      {/* Navegación flotante */}
       {renderNavigationDots()}
       {renderProgressBar()}
       {renderScrollIndicator()}
       {renderSectionMap()}
       
-      {/* Secciones con transiciones 3D */}
       {sections.map((section, index) => {
-        const config = sectionDirections[section.id]
         const isActive = activeSection === index
-        const isPrev = index < activeSection
-        const isNext = index > activeSection
-        
-        // Calcular transform basada en estado
-        let transform = 'translate3d(0, 0, 0)'
-        let opacity = 0
-        let scale = 0.8
-        let rotate = 0
-        
-        if (isActive) {
-          opacity = 1
-          scale = 1
-        } else if (isNext) {
-          // Las secciones siguientes vienen de diferentes direcciones
-          switch (config.enterFrom) {
-            case 'left':
-              transform = 'translate3d(100px, 50px, -100px)'
-              break
-            case 'right':
-              transform = 'translate3d(-100px, 50px, -100px)'
-              break
-            case 'bottom':
-              transform = 'translate3d(0, 100px, -100px)'
-              break
-            case 'top':
-              transform = 'translate3d(0, -100px, -100px)'
-              break
-            default:
-              transform = 'translate3d(0, 50px, -50px)'
-          }
-        } else if (isPrev) {
-          // Las secciones previas se van hacia atrás
-          switch (config.direction) {
-            case 'right':
-              transform = 'translate3d(-150px, -50px, -200px)'
-              break
-            case 'left':
-              transform = 'translate3d(150px, -50px, -200px)'
-              break
-            case 'up':
-              transform = 'translate3d(0, 150px, -200px)'
-              break
-            case 'down':
-              transform = 'translate3d(0, -150px, -200px)'
-              break
-            default:
-              transform = 'translate3d(0, -50px, -100px)'
-          }
-        }
         
         return (
           <section
@@ -230,15 +147,10 @@ export default function ImmersiveSections() {
             ref={el => sectionsRef.current[index] = el}
             style={{
               ...styles.section,
-              transform,
-              opacity,
-              scale,
-              rotate,
-              zIndex: isActive ? 10 : (isNext ? 5 : 1),
+              opacity: isActive ? 1 : 0,
+              zIndex: isActive ? 10 : 1,
               pointerEvents: isActive ? 'auto' : 'none',
-              transition: isTransitioning 
-                ? 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' 
-                : 'none',
+              transition: isTransitioning ? 'opacity 0.5s ease' : 'none',
             }}
             id={section.id}
           >
@@ -247,40 +159,17 @@ export default function ImmersiveSections() {
         )
       })}
       
-      {/* Efecto de partículas 3D en el fondo */}
       <div style={styles.particlesBg}>
         {[...Array(20)].map((_, i) => (
-          <div 
-            key={i}
-            style={{
-              ...styles.particle,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${3 + Math.random() * 4}s`,
-            }}
-          />
+          <div key={i} style={{
+            ...styles.particle,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 5}s`,
+            animationDuration: `${3 + Math.random() * 4}s`,
+          }} />
         ))}
       </div>
-      
-      <style jsx>{`
-        @keyframes particleFloat {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-            opacity: 0;
-          }
-          10% {
-            opacity: 0.8;
-          }
-          90% {
-            opacity: 0.8;
-          }
-          100% {
-            transform: translateY(-100vh) translateX(50px);
-            opacity: 0;
-          }
-        }
-      `}</style>
     </div>
   )
 }
@@ -303,7 +192,6 @@ const styles = {
     scrollSnapAlign: 'start',
     scrollSnapStop: 'always',
   },
-  // Navegación
   navDots: {
     position: 'fixed',
     right: '24px',
@@ -330,10 +218,7 @@ const styles = {
     boxShadow: '0 0 15px var(--color-primary)',
     transform: 'scale(1.3)',
   },
-  dotTransitioning: {
-    pointerEvents: 'none',
-  },
-  // Progreso
+  dotTransitioning: { pointerEvents: 'none' },
   progressContainer: {
     position: 'fixed',
     left: '24px',
@@ -363,7 +248,6 @@ const styles = {
     color: 'var(--color-text-muted)',
     fontFamily: 'monospace',
   },
-  // Scroll indicator
   scrollIndicator: {
     position: 'fixed',
     left: '50%',
@@ -375,17 +259,9 @@ const styles = {
     gap: '8px',
     zIndex: 100,
     opacity: 0.6,
-    transition: 'opacity 0.3s',
   },
-  arrowUp: {
-    color: 'var(--color-primary-light)',
-    transition: 'all 0.3s ease',
-  },
-  arrowDown: {
-    color: 'var(--color-primary-light)',
-    transition: 'all 0.3s ease',
-  },
-  // Section map
+  arrowUp: { color: 'var(--color-primary-light)', transition: 'all 0.3s ease' },
+  arrowDown: { color: 'var(--color-primary-light)', transition: 'all 0.3s ease' },
   sectionMap: {
     position: 'fixed',
     left: '24px',
@@ -406,24 +282,9 @@ const styles = {
     letterSpacing: '2px',
     marginBottom: '4px',
   },
-  mapItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    transition: 'all 0.3s ease',
-  },
-  mapIndex: {
-    fontSize: '10px',
-    color: 'var(--color-primary-light)',
-    fontFamily: 'monospace',
-    width: '20px',
-  },
-  mapName: {
-    fontSize: '11px',
-    color: 'var(--color-text)',
-    textTransform: 'capitalize',
-  },
-  // Partículas
+  mapItem: { display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.3s ease' },
+  mapIndex: { fontSize: '10px', color: 'var(--color-primary-light)', fontFamily: 'monospace', width: '20px' },
+  mapName: { fontSize: '11px', color: 'var(--color-text)', textTransform: 'capitalize' },
   particlesBg: {
     position: 'fixed',
     top: 0,

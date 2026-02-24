@@ -1,3 +1,7 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+
 const pasos = [
   {
     numero: 1,
@@ -44,13 +48,21 @@ const pasos = [
 ]
 
 export default function Proceso() {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
     <section id="proceso" style={styles.section}>
-      {/* Fondo decorativo */}
       <div style={styles.backgroundGlow} />
       
-      <div style={styles.container}>
-        <div style={styles.header}>
+      <div style={{...styles.container, ...(isMobile ? styles.containerMobile : {})}}>
+        <div style={{...styles.header, marginBottom: isMobile ? '2rem' : '4rem'}}>
           <span style={styles.badge}>PROCESO</span>
           <h2 style={styles.title}>
             ¿Cómo <span style={styles.titleGradient}>trabajamos</span> juntos?
@@ -60,11 +72,14 @@ export default function Proceso() {
           </p>
         </div>
         
-        <div style={styles.stepsContainer}>
-          {/* Línea connector */}
-          <div style={styles.connectorLine} />
+        <div style={{
+          ...styles.stepsContainer,
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
+          gap: isMobile ? '1rem' : '1.5rem',
+        }}>
+          {!isMobile && <div style={styles.connectorLine} />}
           
-          {pasos.map((paso, index) => (
+          {pasos.map((paso) => (
             <div key={paso.numero} style={styles.step}>
               <div style={styles.stepCard}>
                 <div style={styles.stepIcon}>
@@ -109,6 +124,9 @@ const styles = {
     width: '100%',
     margin: '0 auto',
     zIndex: 1,
+  },
+  containerMobile: {
+    padding: '0 1rem',
   },
   header: {
     textAlign: 'center',
