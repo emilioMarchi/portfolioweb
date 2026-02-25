@@ -5,15 +5,15 @@ import { motion, useInView } from 'framer-motion'
 
 export default function ScrollSection({ children, id, direction = 'up', initialDelay = 0 }) {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: false, margin: "-100px 0px -100px 0px" }) // Ampliar margen de detección
+  const isInView = useInView(ref, { once: false, margin: "-50px 0px -50px 0px" }) // Margen menos agresivo
 
   // Definir la posición inicial según la dirección
   const getInitialPos = () => {
     switch (direction) {
-      case 'up': return { y: 80, x: 0 }
-      case 'down': return { y: -80, x: 0 }
-      case 'left': return { y: 0, x: 80 }
-      case 'right': return { y: 0, x: -80 }
+      case 'up': return { y: 60, x: 0 }
+      case 'down': return { y: -60, x: 0 }
+      case 'left': return { y: 0, x: 60 }
+      case 'right': return { y: 0, x: -60 }
       case 'fade': return { y: 0, x: 0 } // Para el DemoGenerator
       default: return { y: 0, x: 0 }
     }
@@ -24,7 +24,7 @@ export default function ScrollSection({ children, id, direction = 'up', initialD
   const variants = {
     hidden: {
       opacity: 0,
-      scale: 0.95,
+      scale: 0.98,
       ...initialPos,
     },
     visible: {
@@ -33,7 +33,7 @@ export default function ScrollSection({ children, id, direction = 'up', initialD
       y: 0,
       x: 0,
       transition: {
-        duration: 0.8,
+        duration: 0.7,
         ease: [0.16, 1, 0.3, 1],
         delay: initialDelay, // Permite retrasar la animación si es necesario
       }
@@ -54,8 +54,6 @@ export default function ScrollSection({ children, id, direction = 'up', initialD
         padding: 0,
         margin: 0,
         overflowX: 'hidden',
-        // Eliminar propiedades que Lenis ya controla o que causan conflicto
-        // perspective: '1000px', // Evitar transformaciones 3D si no son necesarias
       }}
     >
       <motion.div
@@ -67,6 +65,7 @@ export default function ScrollSection({ children, id, direction = 'up', initialD
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
+          willChange: 'transform, opacity', // Sugerir al navegador que optimice estas propiedades
         }}
       >
         {children}

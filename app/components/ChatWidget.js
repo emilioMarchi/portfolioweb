@@ -4,14 +4,15 @@ import { useState, useRef, useEffect } from 'react'
 import { useUI } from './UIContext'
 
 export default function ChatWidget() {
-  const { isChatOpen, toggleChat, activeSection } = useUI()
+  const { isChatOpen, toggleChat } = useUI()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isTypingInitial, setIsTypingInitial] = useState(false) // Nuevo estado para el primer mensaje
   const [viewportHeight, setViewportHeight] = useState('85px')
   const [chatMaxHeight, setChatMaxHeight] = useState('520px')
   const [userId, setUserId] = useState(null)
-  const [clientId, setClientId] = useState('client1')
+  const [clientId] = useState('client1') // El chat flotante siempre es asistente
   const [showPreview, setShowPreview] = useState(false)
   const [previewData, setPreviewData] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
@@ -19,16 +20,9 @@ export default function ChatWidget() {
   const messagesEndRef = useRef(null)
   const hasFetchedInitial = useRef(false) // Previene múltiples peticiones iniciales
 
-  // Sincronizar clientId - ELIMINADO: El chat flotante siempre es asistente
+  // Setup inicial: detección móvil, ID de usuario, viewport y sesión
   useEffect(() => {
-    setClientId('client1')
-  }, [])
-
-  // Setup inicial
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
     window.addEventListener('resize', checkMobile)
 
@@ -83,21 +77,21 @@ export default function ChatWidget() {
     }
   }, [messages])
 
-  // Scroll automático
+  // Scroll automático al final
   useEffect(() => {
     if (isChatOpen) {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
       }, 100)
     }
-  }, [isChatOpen, messages, isLoading])
+  }, [isChatOpen, messages, isLoading, isTypingInitial]) // Dependencia de isTypingInitial
 
   // Cargar saludo inicial (SOLO UNA VEZ)
   useEffect(() => {
     if (isChatOpen && messages.length === 0 && userId && !hasFetchedInitial.current) {
-      hasFetchedInitial.current = true
+      hasFetchedInitial.current = true;
+      setIsTypingInitial(true); // Mostrar puntos inmediatamente
       const fetchInitial = async () => {
-        setIsLoading(true)
         try {
           const response = await fetch('/api/chatbot', {
             method: 'POST',
@@ -107,12 +101,15 @@ export default function ChatWidget() {
           const data = await response.json()
           if (data.reply) {
             setMessages([{ role: 'bot', content: '', fullContent: data.reply, typing: true }])
+          } else if (data.history && data.history.length > 0) {
+            // Si no hay reply directo, pero hay historial, lo mostramos (sin typing effect para historial viejo)
+            setMessages(data.history.map(m => ({ ...m, typing: false })));
           }
         } catch (e) {
           console.error('Error fetching initial greeting:', e)
           setMessages([{ role: 'bot', content: '¡Hola! Soy tu asistente de OVNI Studio. ¿En qué puedo ayudarte?', typing: false }])
         } finally {
-          setIsLoading(false)
+          setIsTypingInitial(false); // Ocultar puntos al terminar
         }
       }
       fetchInitial()
@@ -158,6 +155,8 @@ export default function ChatWidget() {
     const userMessage = input.trim()
     setInput('')
     setMessages(prev => [...prev, { role: 'user', content: userMessage, typing: false }])
+    // Mostrar indicador de carga inmediatamente
+    setMessages(prev => [...prev, { role: 'bot', content: '', loading: true }])
     setIsLoading(true)
 
     try {
@@ -170,14 +169,18 @@ export default function ChatWidget() {
       const data = await response.json()
       
       if (data.reply) {
-        setMessages(prev => [...prev, { 
-          role: 'bot', 
-          content: '', 
-          fullContent: data.reply, 
-          typing: true,
-          accion: data.accion,
-          target: data.target
-        }])
+        // Reemplazar el mensaje de carga con la respuesta real
+        setMessages(prev => {
+          const newMsgs = prev.filter(msg => !msg.loading) // Eliminar el mensaje de carga
+          return [...newMsgs, { 
+            role: 'bot', 
+            content: '', 
+            fullContent: data.reply, 
+            typing: true,
+            accion: data.accion,
+            target: data.target
+          }]
+        })
 
         if (data.accion === 'GENERATE_SITE' && data.target) {
           try {
@@ -188,12 +191,24 @@ export default function ChatWidget() {
             console.error('Error parseando target:', e)
           }
         }
+      } else if (data.history && data.history.length > 0) {
+        // Si no hay reply directo, pero hay historial, lo mostramos
+        setMessages(prev => {
+          const newMsgs = prev.filter(msg => !msg.loading);
+          return [...newMsgs, ...data.history.map(m => ({ ...m, typing: false }))];
+        });
       } else {
-        setMessages(prev => [...prev, { role: 'bot', content: 'Disculpa, tuve un problema. Intenta de nuevo.', typing: false }])
+        setMessages(prev => {
+          const newMsgs = prev.filter(msg => !msg.loading) // Eliminar el mensaje de carga
+          return [...newMsgs, { role: 'bot', content: 'Disculpa, tuve un problema. Intenta de nuevo.', typing: false }]
+        })
       }
     } catch (error) {
       console.error('Error:', error)
-      setMessages(prev => [...prev, { role: 'bot', content: 'Error de conexión.', typing: false }])
+      setMessages(prev => {
+        const newMsgs = prev.filter(msg => !msg.loading) // Eliminar el mensaje de carga
+        return [...newMsgs, { role: 'bot', content: 'Error de conexión.', typing: false }]
+      })
     } finally {
       setIsLoading(false)
     }
@@ -266,22 +281,34 @@ export default function ChatWidget() {
                     borderBottomLeftRadius: msg.role === 'bot' ? '4px' : '16px',
                   }}
                 >
-                  {msg.content}
-                  {msg.typing && msg.role === 'bot' && (
-                    <span style={styles.typingIndicator}>
-                      <span style={styles.typingDot}></span>
-                      <span style={styles.typingDot}></span>
-                      <span style={styles.typingDot}></span>
+                  {msg.loading || (msg.typing && msg.role === 'bot') ? (
+                    <span style={styles.typingDots}>
+                      <span style={{...styles.dot, animationDelay: '0s'}} />
+                      <span style={{...styles.dot, animationDelay: '0.2s'}} />
+                      <span style={{...styles.dot, animationDelay: '0.4s'}} />
                     </span>
+                  ) : (
+                    msg.content
+                  )}
+                  {msg.accion === 'GENERATE_SITE' && !msg.typing && (
+                    <div style={{ marginTop: '10px' }}>
+                      <button onClick={() => setShowPreview(true)} style={styles.actionBtn}>
+                        Ver Previsualización
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
             ))}
-            {isLoading && !messages[messages.length - 1]?.typing && (
-              <div style={styles.messageWrapper}>
+            {isTypingInitial && messages.length === 0 && (
+               <div style={styles.messageWrapper}>
                 <div style={styles.botAvatar}><svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 7L12 12L22 7L12 2Z"/></svg></div>
                 <div style={{...styles.message, backgroundColor: 'rgba(30, 30, 50, 0.6)', border: '1px solid rgba(255, 255, 255, 0.05)'}}>
-                  <span style={styles.typingIndicator}><span style={styles.typingDot}></span><span style={styles.typingDot}></span><span style={styles.typingDot}></span></span>
+                  <span style={styles.typingDots}>
+                    <span style={{...styles.dot, animationDelay: '0s'}} />
+                    <span style={{...styles.dot, animationDelay: '0.2s'}} />
+                    <span style={{...styles.dot, animationDelay: '0.4s'}} />
+                  </span>
                 </div>
               </div>
             )}
@@ -308,7 +335,10 @@ export default function ChatWidget() {
       <style jsx>{`
         .ovni-fab { animation: float 3s ease-in-out infinite; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        @keyframes bounce {
+          0%, 80%, 100% { transform: scale(0); opacity: 0; }
+          40% { transform: scale(1.0); opacity: 1; }
+        }
       `}</style>
     </>
   )
@@ -356,8 +386,19 @@ const styles = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
   message: { padding: '12px 16px', borderRadius: '16px', maxWidth: '80%', fontSize: '14px', lineHeight: 1.5, wordBreak: 'break-word' },
-  typingIndicator: { display: 'inline-flex', gap: '3px', marginLeft: '8px' },
-  typingDot: { width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#9ca3af' },
+  typingDots: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    height: '1em',
+  },
+  dot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    backgroundColor: '#9ca3af',
+    animation: 'bounce 1.4s infinite ease-in-out both',
+  },
   inputArea: { padding: '12px 16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', gap: '8px' },
   input: {
     flex: 1, padding: '12px 16px', borderRadius: '24px', border: '1px solid rgba(255, 255, 255, 0.1)',
