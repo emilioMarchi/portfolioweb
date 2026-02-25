@@ -137,9 +137,10 @@ export default function Contacto() {
 const styles = {
   section: {
     position: 'relative',
-    padding: '6rem 2rem',
-    backgroundColor: 'var(--color-bg)',
+    padding: '2rem 2rem 6rem 2rem',
+    backgroundColor: 'transparent',
     overflow: 'hidden',
+    width: '100%',
   },
   backgroundGlow: {
     position: 'absolute',
@@ -148,21 +149,28 @@ const styles = {
     transform: 'translate(-50%, -50%)',
     width: '100%',
     height: '100%',
-    background: 'radial-gradient(ellipse 60% 50% at 50% 100%, rgba(99, 102, 241, 0.15) 0%, transparent 60%)',
+    background: 'radial-gradient(ellipse 60% 50% at 50% 100%, rgba(99, 102, 241, 0.1) 0%, transparent 60%)',
     pointerEvents: 'none',
   },
   container: {
-    maxWidth: '900px',
+    maxWidth: '1000px',
     margin: '0 auto',
     position: 'relative',
     zIndex: 1,
+    backgroundColor: 'rgba(22, 33, 62, 0.4)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '30px',
+    border: '1px solid var(--color-border)',
+    padding: '4rem 3rem',
+    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)',
   },
   containerMobile: {
-    padding: '0 1rem',
+    padding: '3rem 1.5rem',
+    borderRadius: '20px',
   },
   header: {
     textAlign: 'center',
-    marginBottom: '3rem',
+    marginBottom: '3.5rem',
   },
   badge: {
     display: 'inline-block',

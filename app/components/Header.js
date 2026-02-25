@@ -30,18 +30,30 @@ export default function Header() {
     setMobileMenuOpen(false)
     if (id) {
       e.preventDefault()
+      
+      // Intentar usar el scroll suave de Lenis expuesto globalmente
+      if (window.scrollToSection) {
+        const sections = ['hero', 'productos', 'servicios', 'proceso', 'tecnica', 'contacto']
+        const index = sections.indexOf(id === 'hero' ? 'hero' : id)
+        if (index !== -1) {
+          window.scrollToSection(index)
+          return
+        }
+      }
+
+      // Fallback si Lenis no está listo
       const element = document.getElementById(id)
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth' })
+        element.scrollIntoView({ behavior: 'auto' })
       }
     }
   }
 
   const headerStyle = {
     ...styles.header,
-    backgroundColor: isMobile ? 'transparent' : (isScrolled ? 'rgba(15, 15, 26, 0.95)' : 'rgba(15, 15, 26, 0.8)'),
-    borderBottom: isMobile ? 'none' : (isScrolled ? '1px solid rgba(20, 184, 166, 0.2)' : 'none'),
-    boxShadow: isMobile ? 'none' : (isScrolled ? '0 4px 20px rgba(0,0,0,0.3)' : 'none'),
+    backgroundColor: 'transparent',
+    borderBottom: 'none',
+    boxShadow: 'none',
     pointerEvents: 'none', // Por defecto no bloquea clicks abajo
   }
 
@@ -121,8 +133,9 @@ const styles = {
     zIndex: 100,
     padding: '0.875rem 0',
     transition: 'all 0.3s ease',
-    backgroundColor: 'rgba(15, 15, 26, 0.95)',
+    backgroundColor: 'transparent',
   },
+
   container: {
     maxWidth: '1200px',
     margin: '0 auto',

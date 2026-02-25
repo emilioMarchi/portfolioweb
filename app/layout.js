@@ -1,6 +1,7 @@
 import './globals.css'
 import Header from './components/Header'
 import { UIProvider } from './components/UIContext'
+import DeepSpaceBackground from './components/DeepSpaceBackground'
 
 export const metadata = {
   title: 'OVNI Studio - Portfolio',
@@ -17,6 +18,7 @@ export default function RootLayout({ children }) {
       </head>
       <body style={{ margin: 0, padding: 0 }}>
         <UIProvider>
+          <DeepSpaceBackground />
           <Header />
           {children}
         </UIProvider>
