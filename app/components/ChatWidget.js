@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useChat } from './ChatContext'
+import { useUI } from './UIContext'
 
 export default function ChatWidget() {
-  const { isChatOpen, openChat, closeChat, toggleChat } = useChat()
+  const { isChatOpen, openChat, closeChat, toggleChat } = useUI()
+
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState([
     { 
@@ -246,12 +247,13 @@ export default function ChatWidget() {
 const styles = {
   fab: {
     position: 'fixed',
-    bottom: '24px',
-    right: '24px',
-    width: '64px',
-    height: '64px',
+    bottom: '20px',
+    left: '20px',
+    width: '54px',
+    height: '54px',
     borderRadius: '50%',
     background: 'linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%)',
+
     color: '#fff',
     border: 'none',
     cursor: 'pointer',
@@ -280,10 +282,11 @@ const styles = {
   },
   chatWindow: {
     position: 'fixed',
-    bottom: '100px',
-    right: '24px',
-    width: '380px',
+    bottom: '85px',
+    left: '20px',
+    width: '320px',
     maxHeight: '520px',
+
     backgroundColor: 'var(--color-bg-secondary)',
     borderRadius: '20px',
     boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(99, 102, 241, 0.1)',

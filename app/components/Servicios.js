@@ -121,7 +121,7 @@ export default function Servicios() {
 const styles = {
   section: {
     position: 'relative',
-    padding: '1rem',
+    padding: '6rem 1rem',
     backgroundColor: 'transparent',
     overflow: 'hidden',
     width: '100%',

@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useChat } from './ChatContext'
+import { useUI } from './UIContext'
 
 export default function Hero() {
-  const { openChat, closeChat } = useChat()
+  const { openChat, closeChat } = useUI()
+
   const [showContent, setShowContent] = useState(false)
   const [message, setMessage] = useState('')
   const [showChat, setShowChat] = useState(false)

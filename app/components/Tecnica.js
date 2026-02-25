@@ -1,8 +1,9 @@
 'use client'
 
-import { useChat } from './ChatContext'
+import { useUI } from './UIContext'
 
 const tecnologias = [
+
   { 
     nombre: 'Next.js', 
     descripcion: 'Framework React con Serverless',
@@ -44,7 +45,8 @@ const tecnologias = [
 ]
 
 export default function Tecnica() {
-  const { openChat } = useChat()
+  const { openChat } = useUI()
+
   
   return (
     <section id="tecnica" style={styles.section}>
@@ -109,7 +111,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '4rem 2rem',
+    padding: '7rem 2rem',
     overflow: 'hidden',
   },
   backgroundGlow: {

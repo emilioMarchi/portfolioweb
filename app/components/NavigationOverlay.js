@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, useScroll, useSpring } from 'framer-motion'
+import { useUI } from './UIContext'
 
 const sections = [
   { id: 'hero', name: 'Inicio' },
@@ -13,28 +14,35 @@ const sections = [
 ]
 
 export default function NavigationOverlay() {
-  const [activeSection, setActiveSection] = useState(0)
+  const { activeSection: activeSectionId, setActiveSection } = useUI()
+  const activeSection = sections.findIndex(s => s.id === activeSectionId)
   const { scrollYProgress } = useScroll()
   const scaleY = useSpring(scrollYProgress, { stiffness: 100, damping: 30 })
 
   useEffect(() => {
-    // Escuchar cambios del scroll
     const handleScroll = () => {
-      const scrollPosition = window.scrollY + window.innerHeight / 2
+      const windowHeight = window.innerHeight
+      let currentSectionId = 'hero'
       
-      for (let i = 0; i < sections.length; i++) {
-        const section = document.getElementById(sections[i].id)
-        if (section) {
-          const top = section.offsetTop
-          const bottom = top + section.offsetHeight
+      // Encontrar la sección que más espacio ocupa en el viewport
+      let maxVisibleHeight = 0
+      
+      sections.forEach((s) => {
+        const el = document.getElementById(s.id)
+        if (el) {
+          const rect = el.getBoundingClientRect()
+          const visibleHeight = Math.min(rect.bottom, windowHeight) - Math.max(rect.top, 0)
           
-          if (scrollPosition >= top && scrollPosition < bottom) {
-            setActiveSection(i)
-            break
+          if (visibleHeight > maxVisibleHeight) {
+            maxVisibleHeight = visibleHeight
+            currentSectionId = s.id
           }
         }
-      }
+      })
+      
+      setActiveSection(currentSectionId)
     }
+
 
     // Intervalo para detectar cambios
     const interval = setInterval(handleScroll, 100)
@@ -51,11 +59,12 @@ export default function NavigationOverlay() {
     const section = document.getElementById(sections[index].id)
     if (section) {
       section.scrollIntoView({ behavior: 'smooth' })
-      setActiveSection(index)
+      setActiveSection(sections[index].id)
     }
   }
 
   return (
+
     <>
       {/* Barra de progreso lateral - solo desktop */}
       <motion.div

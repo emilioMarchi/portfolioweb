@@ -1,6 +1,6 @@
 import './globals.css'
 import Header from './components/Header'
-import { ChatProvider } from './components/ChatContext'
+import { UIProvider } from './components/UIContext'
 
 export const metadata = {
   title: 'OVNI Studio - Portfolio',
@@ -16,11 +16,12 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body style={{ margin: 0, padding: 0 }}>
-        <ChatProvider>
+        <UIProvider>
           <Header />
           {children}
-        </ChatProvider>
+        </UIProvider>
       </body>
     </html>
   )
 }
+

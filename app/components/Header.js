@@ -1,30 +1,53 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useUI } from './UIContext'
 
 export default function Header() {
-  const [isScrolled, setIsScrolled] = useState(false)
+  const { activeSection, openChat } = useUI()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
-    }
-    handleScroll()
+    // Detectar si es mobile inmediatamente
+    setIsMobile(window.innerWidth < 768)
+    
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleScroll = () => setIsScrolled(window.scrollY > 50)
+    
+    window.addEventListener('resize', handleResize)
     window.addEventListener('scroll', handleScroll, { passive: true })
+    
     return () => {
+      window.removeEventListener('resize', handleResize)
       window.removeEventListener('scroll', handleScroll)
     }
   }, [])
 
-  const closeMenu = () => setMobileMenuOpen(false)
+  const closeMenu = (e, id) => {
+    setMobileMenuOpen(false)
+    if (id) {
+      e.preventDefault()
+      const element = document.getElementById(id)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  }
+
+  const headerStyle = {
+    ...styles.header,
+    backgroundColor: isMobile ? 'transparent' : (isScrolled ? 'rgba(15, 15, 26, 0.95)' : 'rgba(15, 15, 26, 0.8)'),
+    borderBottom: isMobile ? 'none' : (isScrolled ? '1px solid rgba(20, 184, 166, 0.2)' : 'none'),
+    boxShadow: isMobile ? 'none' : (isScrolled ? '0 4px 20px rgba(0,0,0,0.3)' : 'none'),
+    pointerEvents: 'none', // Por defecto no bloquea clicks abajo
+  }
 
   return (
-    <header style={{
-      ...styles.header,
-      opacity: isScrolled ? 0.95 : 0.9,
-    }}>
-      <div style={styles.container}>
+    <header style={headerStyle}>
+      <div style={{...styles.container, pointerEvents: 'auto'}}>
         <a href="#" style={styles.logo} onClick={closeMenu}>
           <div style={styles.logoIcon}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -46,44 +69,48 @@ export default function Header() {
         
         {/* Desktop Nav */}
         <nav style={styles.nav} className="desktop-only">
-          <a href="#productos" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Productos</a>
-          <a href="#servicios" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Servicios</a>
-          <a href="#proceso" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Proceso</a>
-          <a href="#tecnica" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Técnica</a>
-          <a href="#contacto" style={styles.ctaButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.3)'; e.target.style.boxShadow = '0 0 30px rgba(20, 184, 166, 0.5)'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.15)'; e.target.style.boxShadow = '0 0 20px rgba(20, 184, 166, 0.25)'; }}>
-            Contacto
-          </a>
+          <a href="#" style={{...styles.navButton, ...(activeSection === 'hero' ? styles.navButtonActive : {})}} onClick={(e) => closeMenu(e, 'hero')}>Inicio</a>
+          <a href="#productos" style={{...styles.navButton, ...(activeSection === 'productos' ? styles.navButtonActive : {})}} onClick={(e) => closeMenu(e, 'productos')}>Productos</a>
+          <a href="#servicios" style={{...styles.navButton, ...(activeSection === 'servicios' ? styles.navButtonActive : {})}} onClick={(e) => closeMenu(e, 'servicios')}>Servicios</a>
+          <a href="#proceso" style={{...styles.navButton, ...(activeSection === 'proceso' ? styles.navButtonActive : {})}} onClick={(e) => closeMenu(e, 'proceso')}>Proceso</a>
+          <a href="#tecnica" style={{...styles.navButton, ...(activeSection === 'tecnica' ? styles.navButtonActive : {})}} onClick={(e) => closeMenu(e, 'tecnica')}>Técnica</a>
+          <a href="#contacto" style={{...styles.navButton, ...(activeSection === 'contacto' ? styles.navButtonActive : {})}} onClick={(e) => closeMenu(e, 'contacto')}>Contacto</a>
         </nav>
         
-        {/* Mobile Menu Button */}
+        {/* Mobile Menu Button (Floating) */}
         <button 
-          style={styles.mobileMenuBtn} 
+          style={{
+            ...styles.mobileMenuBtn,
+            ...(isMobile ? styles.mobileFAB : { display: 'none' })
+          }} 
           className="mobile-only"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             {mobileMenuOpen ? (
-              <path d="M6 18L18 6M6 6l12 12"/>
+              <path d="M18 6L6 18M6 6l12 12" stroke="#fff"/>
             ) : (
-              <path d="M3 12h18M3 6h18M3 18h18"/>
+              <path d="M3 12h18M3 6h18M3 18h18" stroke="#fff"/>
             )}
           </svg>
         </button>
         
-        {/* Mobile Menu */}
+        {/* Mobile Menu (Floating Column) */}
         {mobileMenuOpen && (
-          <div style={styles.mobileMenu} className="mobile-only-menu">
-            <a href="#productos" style={styles.mobileNavLink} onClick={closeMenu}>Productos</a>
-            <a href="#servicios" style={styles.mobileNavLink} onClick={closeMenu}>Servicios</a>
-            <a href="#proceso" style={styles.mobileNavLink} onClick={closeMenu}>Proceso</a>
-            <a href="#tecnica" style={styles.mobileNavLink} onClick={closeMenu}>Técnica</a>
-            <a href="#contacto" style={styles.mobileCtaButton} onClick={closeMenu}>Contacto</a>
+          <div style={styles.mobileMenuFloating} className="mobile-only-menu">
+            <a href="#" style={{...styles.mobileNavLinkMinimal, ...(activeSection === 'hero' ? styles.mobileNavLinkMinimalActive : {})}} onClick={(e) => closeMenu(e, 'hero')}>Inicio</a>
+            <a href="#productos" style={{...styles.mobileNavLinkMinimal, ...(activeSection === 'productos' ? styles.mobileNavLinkMinimalActive : {})}} onClick={(e) => closeMenu(e, 'productos')}>Productos</a>
+            <a href="#servicios" style={{...styles.mobileNavLinkMinimal, ...(activeSection === 'servicios' ? styles.mobileNavLinkMinimalActive : {})}} onClick={(e) => closeMenu(e, 'servicios')}>Servicios</a>
+            <a href="#proceso" style={{...styles.mobileNavLinkMinimal, ...(activeSection === 'proceso' ? styles.mobileNavLinkMinimalActive : {})}} onClick={(e) => closeMenu(e, 'proceso')}>Proceso</a>
+            <a href="#tecnica" style={{...styles.mobileNavLinkMinimal, ...(activeSection === 'tecnica' ? styles.mobileNavLinkMinimalActive : {})}} onClick={(e) => closeMenu(e, 'tecnica')}>Técnica</a>
+            <a href="#contacto" style={{...styles.mobileNavLinkMinimal, ...(activeSection === 'contacto' ? styles.mobileNavLinkMinimalActive : {})}} onClick={(e) => closeMenu(e, 'contacto')}>Contacto</a>
           </div>
         )}
       </div>
     </header>
   )
 }
+
 
 const styles = {
   header: {
@@ -143,57 +170,66 @@ const styles = {
     transition: 'all 0.25s ease',
     backdropFilter: 'blur(8px)',
   },
-  ctaButton: {
-    padding: '0.5rem 1.25rem',
-    backgroundColor: 'rgba(20, 184, 166, 0.15)',
-    border: '1px solid rgba(20, 184, 166, 0.6)',
-    borderRadius: '20px',
+  navButtonActive: {
+    backgroundColor: 'rgba(20, 184, 166, 0.2)',
+    borderColor: 'rgba(20, 184, 166, 0.8)',
     color: '#5eead4',
-    fontSize: '0.85rem',
-    fontWeight: 600,
-    textDecoration: 'none',
-    transition: 'all 0.25s ease',
-    boxShadow: '0 0 20px rgba(20, 184, 166, 0.25)',
+    boxShadow: '0 0 15px rgba(20, 184, 166, 0.3)',
   },
   mobileMenuBtn: {
+
     display: 'flex',
     padding: '8px',
     background: 'none',
     border: 'none',
     color: 'var(--color-text)',
     cursor: 'pointer',
+    zIndex: 200,
   },
-  mobileMenu: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(15, 15, 26, 0.98)',
-    padding: '1rem',
+  mobileFAB: {
+    position: 'fixed',
+    bottom: '20px',
+    right: '20px',
+    width: '54px',
+    height: '54px',
+    borderRadius: '50%',
+    background: 'var(--gradient-primary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 8px 32px rgba(20, 184, 166, 0.4)',
+    border: '2px solid rgba(255, 255, 255, 0.1)',
+    zIndex: 200,
+  },
+  mobileMenuFloating: {
+    position: 'fixed',
+    bottom: '85px',
+    right: '20px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.5rem',
-    borderTop: '1px solid rgba(20, 184, 166, 0.2)',
-    animation: 'fadeIn 0.3s ease',
+    gap: '8px',
+    alignItems: 'flex-end',
+    zIndex: 190,
+    animation: 'slideUpFade 0.3s ease-out forwards',
   },
-  mobileNavLink: {
-    padding: '0.75rem 1rem',
-    color: '#94a3b8',
-    fontSize: '1rem',
+  mobileNavLinkMinimal: {
+    padding: '0.6rem 1.2rem',
+    backgroundColor: 'rgba(15, 15, 26, 0.85)',
+    border: '1px solid rgba(20, 184, 166, 0.3)',
+    borderRadius: '12px',
+    color: '#e2e8f0',
+    fontSize: '0.9rem',
+    fontWeight: 500,
     textDecoration: 'none',
-    borderRadius: '8px',
-    transition: 'all 0.2s ease',
-  },
-  mobileCtaButton: {
-    padding: '0.75rem 1rem',
-    backgroundColor: 'rgba(20, 184, 166, 0.15)',
-    border: '1px solid rgba(20, 184, 166, 0.6)',
-    borderRadius: '8px',
-    color: '#5eead4',
-    fontSize: '1rem',
-    fontWeight: 600,
-    textDecoration: 'none',
+    backdropFilter: 'blur(10px)',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
     textAlign: 'center',
-    marginTop: '0.5rem',
+    minWidth: '120px',
+  },
+  mobileNavLinkMinimalActive: {
+    backgroundColor: 'rgba(20, 184, 166, 0.2)',
+    borderColor: '#5eead4',
+    color: '#5eead4',
   },
 }
+
