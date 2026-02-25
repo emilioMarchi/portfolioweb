@@ -10,6 +10,7 @@ export default function DemoGenerator() {
   const [previewData, setPreviewData] = useState(null)
   const [currentStep, setCurrentStep] = useState('chat') // chat | generating | preview
   const chatMessagesRef = useRef(null)
+  const hasFetchedInitial = useRef(false)
 
   const scrollToBottom = () => {
     if (chatMessagesRef.current) {
@@ -22,9 +23,40 @@ export default function DemoGenerator() {
     setTimeout(scrollToBottom, 50)
   }, [messages])
 
+  // Recuperar estado de la sesión actual al cargar
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedSession = sessionStorage.getItem('ovni_demo_session')
+      const savedPreview = sessionStorage.getItem('ovni_demo_preview')
+      
+      if (savedSession) {
+        setMessages(JSON.parse(savedSession))
+        hasFetchedInitial.current = true // No pedir saludo inicial si ya hay sesión
+      }
+      
+      if (savedPreview) {
+        setPreviewData(JSON.parse(savedPreview))
+        setCurrentStep('preview') // Restaurar vista de preview directamente
+      }
+    }
+  }, [])
+
+  // Guardar estado en la sesión cada vez que cambian
+  useEffect(() => {
+    if (messages.length > 0) {
+      sessionStorage.setItem('ovni_demo_session', JSON.stringify(messages))
+    }
+    if (previewData) {
+      sessionStorage.setItem('ovni_demo_preview', JSON.stringify(previewData))
+    }
+  }, [messages, previewData])
+
   // Saludo inicial del diseñador
   useEffect(() => {
+    if (hasFetchedInitial.current) return;
+    
     const initDesigner = async () => {
+      hasFetchedInitial.current = true
       setIsLoading(true)
       try {
         const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
@@ -47,8 +79,12 @@ export default function DemoGenerator() {
         setIsLoading(false)
       }
     }
-    initDesigner()
-  }, [])
+    
+    // Solo iniciar si no había mensajes guardados
+    if (messages.length === 0) {
+      initDesigner()
+    }
+  }, [messages.length])
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
@@ -156,9 +192,26 @@ export default function DemoGenerator() {
                 style={styles.iframe}
                 srcDoc={getTemplateHtml(previewData.tipo, previewData)}
               />
-              <button onClick={() => setCurrentStep('chat')} style={styles.resetBtn}>
-                Reiniciar Diseño
-              </button>
+              <div style={styles.previewActions}>
+                <button onClick={() => setCurrentStep('chat')} style={styles.resetBtn}>
+                  Reiniciar Diseño
+                </button>
+                <button 
+                  onClick={() => {
+                    const slug = previewData.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                    const p = previewData.colores?.primary?.replace('#', '') || '6366f1';
+                    const s = previewData.colores?.secondary?.replace('#', '') || '0ea5e9';
+                    const desc = encodeURIComponent(previewData.descripcion || '');
+                    
+                    const targetUrl = `/site-preview/${slug}?tipo=${previewData.tipo || 'landing'}&p=${p}&s=${s}&desc=${desc}`;
+                    
+                    window.open(targetUrl, '_blank');
+                  }} 
+                  style={styles.confirmBtn}
+                >
+                  Generar Emulación 🚀
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -240,5 +293,7 @@ const styles = {
   browserDots: { display: 'flex', gap: '6px', '& span': { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#555' } },
   browserUrl: { flex: 1, backgroundColor: '#1a1a1a', borderRadius: '4px', padding: '4px 12px', fontSize: '0.8rem', color: '#888' },
   iframe: { flex: 1, border: 'none', backgroundColor: '#fff' },
-  resetBtn: { position: 'absolute', bottom: '20px', right: '20px', padding: '10px 20px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }
+  previewActions: { display: 'flex', gap: '10px', position: 'absolute', bottom: '20px', right: '20px' },
+  resetBtn: { padding: '10px 20px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' },
+  confirmBtn: { padding: '10px 20px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }
 }
