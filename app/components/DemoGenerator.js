@@ -150,7 +150,7 @@ export default function DemoGenerator() {
             <div style={styles.previewContent}>
               <div style={styles.browserHeader}>
                 <div style={styles.browserDots}><span/><span/><span/></div>
-                <div style={styles.browserUrl}>https://{previewData.nombre.toLowerCase().replace(/\s/g, '')}.ovni.studio</div>
+                <div style={styles.browserUrl}>Previsualización del sitio</div>
               </div>
               <iframe 
                 style={styles.iframe}

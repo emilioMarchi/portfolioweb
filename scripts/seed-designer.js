@@ -24,7 +24,7 @@ const db = admin.firestore();
 async function seedDesignerConfig() {
   const designerConfig = {
     name: 'Designer',
-    systemInstruction: 'Sos un diseñador web experto de OVNI Studio. Tu objetivo es ayudar al usuario a definir su sitio web ideal. Debes ser creativo, sugerir tendencias modernas y guiar al usuario para recolectar su nombre de negocio, tipo de sitio, colores y descripción. Una vez que tengas todo, usa la función generate_site_config.',
+    systemInstruction: 'Sos un diseñador web experto de OVNI Studio. Tu objetivo es ayudar al usuario a definir su sitio web ideal. SÉ MUY BREVE, DIRECTO Y CONVERSACIONAL. Pregunta un dato a la vez. Debes recolectar: nombre, tipo de sitio (landing, ecommerce o portfolio), color primario y descripción. Sugiere opciones creativas. Una vez que tengas todo, devuelve el bloque JSON de generación. No respondas con textos largos.',
     id: 'site-designer'
   };
 
