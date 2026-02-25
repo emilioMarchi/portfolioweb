@@ -32,15 +32,15 @@ export async function POST(request) {
   try {
     const { userId, clientId, message, apiKey } = await request.json();
 
-    if (!userId || !message) {
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Faltan userId o mensaje' },
+        { error: 'Falta userId' },
         { status: 400 }
       );
     }
 
     // Verificar token de Firebase Auth
-    if (apiKey && apiKey.startsWith('ey')) { // Tokens de Firebase startsWith 'ey'
+    if (apiKey && apiKey.startsWith('ey')) { 
       try {
         const decodedToken = await admin.auth().verifyIdToken(apiKey)
         if (decodedToken.uid !== userId) {
@@ -49,18 +49,52 @@ export async function POST(request) {
             { status: 401 }
           )
         }
-        console.log('✅ Usuario Firebase verificado:', decodedToken.uid)
       } catch (authError) {
         console.warn('Token inválido:', authError.message)
-        // Aceptar si no hay token o es fallback
       }
-    } else {
-      console.log('⚠️ Modo sin auth - usuario:', userId)
     }
 
-    // Obtener historial (últimos 10 mensajes)
+    // Obtener historial
     const historialActual = await prepareHistoryForGemini(userId);
+    
+    // CASO ESPECIAL: Si no hay mensaje, es una petición de SALUDO INICIAL
+    if (!message) {
+      if (historialActual.recentMessages.length > 0) {
+        // El usuario ya tiene historial, saludamos reconociéndolo
+        const lastMessage = historialActual.recentMessages[historialActual.recentMessages.length - 1];
+        const contextPrompt = `El usuario ha vuelto al chat. Su historial tiene ${historialActual.totalMessages} mensajes. Salúdalo de forma breve y profesional como OVNI Assistant, reconociendo que ha vuelto.`;
+        
+        const iaResponse = await generateResponse(
+          contextPrompt, 
+          historialActual.recentMessages, 
+          { clientId: clientId || 'client1' },
+          null
+        );
+        
+        return NextResponse.json({
+          reply: iaResponse.respuesta,
+          isNewUser: false,
+          history: historialActual.recentMessages
+        });
+      } else {
+        // Usuario nuevo, saludo inicial estándar generado por IA
+        const iaResponse = await generateResponse(
+          "Genera un saludo inicial creativo, breve y profesional para un nuevo usuario. Preséntate como OVNI Assistant de OVNI Studio. Explica que puedes ayudar con landing pages, automatización e IA.", 
+          [], 
+          { clientId: clientId || 'client1' },
+          null
+        );
+        
+        return NextResponse.json({
+          reply: iaResponse.respuesta,
+          isNewUser: true
+        });
+      }
+    }
+
+    // FLUJO NORMAL: Procesar mensaje del usuario
     const historialParaIA = [...historialActual.recentMessages, { role: 'user', content: message }];
+
 
     // Generar respuesta directamente (sin intention classifier para evitar llamada extra)
     // generateResponse ya incluye RAG internamente

@@ -5,43 +5,74 @@ import { useUI } from './UIContext'
 
 export default function ChatWidget() {
   const { isChatOpen, openChat, closeChat, toggleChat } = useUI()
-
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState([
-    { 
-      role: 'bot', 
-      content: '¡Hola! Soy OVNI, tu asistente de inteligencia artificial. Estoy aquí para ayudarte a crear tu presencia digital. ¿En qué puedo asistirte hoy?',
-      typing: true 
-    }
-  ])
+  const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef(null)
 
-  // Generar o recuperar userId de localStorage
-  const [userId, setUserId] = useState(() => {
+  // Recuperar mensajes de la sesión actual al cargar
+  useEffect(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('chatbot_userId');
-      if (stored) return stored;
-      const newId = `user_${Date.now()}`;
-      localStorage.setItem('chatbot_userId', newId);
-      return newId;
+      const savedSession = sessionStorage.getItem('ovni_chat_session')
+      if (savedSession) {
+        setMessages(JSON.parse(savedSession))
+      }
     }
-    return `user_${Date.now()}`;
-  })
-  
-  // Client ID para OVNI Studio
-  const clientId = 'client1'
+  }, [])
 
+  // Guardar mensajes en la sesión cada vez que cambian
+  useEffect(() => {
+    if (messages.length > 0) {
+      sessionStorage.setItem('ovni_chat_session', JSON.stringify(messages))
+    }
+  }, [messages])
+
+  // Scroll automático al final mejorado
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
   }
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    if (isOpen) {
+      // Pequeño delay para asegurar que el DOM se renderizó
+      const timer = setTimeout(scrollToBottom, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [isOpen, messages, isLoading])
+
+  // Cargar saludo inicial solo si la sesión está vacía
+  useEffect(() => {
+    if (isOpen && messages.length === 0 && userId) {
+      const fetchInitial = async () => {
+        setIsLoading(true)
+        try {
+          const response = await fetch('/api/chatbot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, message: '' })
+          })
+          const data = await response.json()
+          if (data.reply) {
+            setMessages([{ role: 'bot', content: data.reply, typing: true }])
+          }
+        } catch (e) {
+          setMessages([{ role: 'bot', content: '¡Hola! ¿Cómo puedo ayudarte?', typing: false }])
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      fetchInitial()
+    }
+  }, [isOpen, userId])
+
+  // Client ID para OVNI Studio
+  const clientId = 'client1'
 
   // Sincronizar estado interno con contexto
+
   useEffect(() => {
     if (isChatOpen !== isOpen) {
       setIsOpen(isChatOpen)

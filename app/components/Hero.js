@@ -166,13 +166,30 @@ export default function Hero() {
 }
 
 function ChatPanel({ userId, apiKey, onClose }) {
-  const [messages, setMessages] = useState([
-    { role: 'bot', content: '', typing: true, fullContent: '¡Hola! Soy OVNI. ¿En qué puedo ayudarte hoy?' }
-  ])
+  const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
   const scrollContainerRef = useRef(null)
 
+  // Recuperar sesión actual al cargar
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedSession = sessionStorage.getItem('ovni_hero_session')
+      if (savedSession) {
+        setMessages(JSON.parse(savedSession))
+      }
+    }
+  }, [])
+
+  // Guardar mensajes en la sesión
+  useEffect(() => {
+    if (messages.length > 0) {
+      sessionStorage.setItem('ovni_hero_session', JSON.stringify(messages))
+    }
+  }, [messages])
+
+  // Scroll automático al final
   const scrollToBottom = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
@@ -183,28 +200,31 @@ function ChatPanel({ userId, apiKey, onClose }) {
     scrollToBottom()
   }, [messages, isLoading])
 
+  // Cargar saludo inicial solo si la sesión está vacía
   useEffect(() => {
-    const welcomeMsg = messages[0]
-    if (welcomeMsg && welcomeMsg.typing && welcomeMsg.fullContent) {
-      let i = 0
-      const timer = setInterval(() => {
-        if (i <= welcomeMsg.fullContent.length) {
-          setMessages(prev => [{
-            ...prev[0],
-            content: welcomeMsg.fullContent.slice(0, i)
-          }])
-          i++
-        } else {
-          clearInterval(timer)
-          setMessages(prev => [{
-            ...prev[0],
-            typing: false
-          }])
+    const fetchInitialState = async () => {
+      if (!userId || messages.length > 0) return
+      setIsLoading(true)
+      try {
+        const response = await fetch('/api/chatbot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, apiKey, message: '' })
+        })
+        const data = await response.json()
+        
+        if (data.reply) {
+          setMessages([{ role: 'bot', content: '', typing: true, fullContent: data.reply }])
         }
-      }, 30)
-      return () => clearInterval(timer)
+      } catch (error) {
+        setMessages([{ role: 'bot', content: '¡Hola! Soy OVNI. ¿En qué puedo ayudarte?', typing: false }])
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [])
+    fetchInitialState()
+  }, [userId])
+
 
   const sendMessage = async (e) => {
     e.preventDefault()
