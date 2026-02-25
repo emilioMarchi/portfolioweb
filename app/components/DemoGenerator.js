@@ -36,7 +36,7 @@ export default function DemoGenerator() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedSession = sessionStorage.getItem('ovni_demo_session')
-      const savedPreview = sessionStorage.getItem('ovni_demo_preview')
+      const savedPreview = localStorage.getItem('ovni_demo_preview') // Cambiado a localStorage para que dure días
       
       if (savedSession) {
         setMessages(JSON.parse(savedSession))
@@ -56,7 +56,7 @@ export default function DemoGenerator() {
       sessionStorage.setItem('ovni_demo_session', JSON.stringify(messages))
     }
     if (previewData) {
-      sessionStorage.setItem('ovni_demo_preview', JSON.stringify(previewData))
+      localStorage.setItem('ovni_demo_preview', JSON.stringify(previewData)) // Guardar en localStorage
     }
   }, [messages, previewData])
 
@@ -75,7 +75,8 @@ export default function DemoGenerator() {
           body: JSON.stringify({ 
             userId, 
             clientId: 'site-designer', 
-            message: 'Hola, quiero empezar a diseñar mi sitio web' 
+            message: '', 
+            clearHistory: true // Limpiar historial en el backend al iniciar nueva sesión
           })
         })
         const data = await response.json()
@@ -131,6 +132,38 @@ export default function DemoGenerator() {
       }
     } catch (error) {
       console.error('Error:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleReset = async () => {
+    setCurrentStep('chat')
+    setPreviewData(null)
+    setMessages([])
+    setInput('')
+    sessionStorage.removeItem('ovni_demo_session')
+    localStorage.removeItem('ovni_demo_preview')
+    
+    setIsLoading(true)
+    try {
+      const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
+      const response = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId, 
+          clientId: 'site-designer', 
+          message: '', 
+          clearHistory: true 
+        })
+      })
+      const data = await response.json()
+      if (data.reply) {
+        setMessages([{ role: 'bot', content: data.reply }])
+      }
+    } catch (e) {
+      setMessages([{ role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }])
     } finally {
       setIsLoading(false)
     }
@@ -227,7 +260,7 @@ export default function DemoGenerator() {
                 srcDoc={getTemplateHtml(previewData.tipo, previewData)}
               />
               <div style={styles.previewActions}>
-                <button onClick={() => setCurrentStep('chat')} style={styles.resetBtn}>
+                <button onClick={handleReset} style={styles.resetBtn}>
                   Reiniciar Diseño
                 </button>
                 <button 

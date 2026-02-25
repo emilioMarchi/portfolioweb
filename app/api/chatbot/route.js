@@ -30,13 +30,18 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const { userId, clientId, message, apiKey } = await request.json();
+    const { userId, clientId, message, apiKey, clearHistory } = await request.json();
 
     if (!userId) {
       return NextResponse.json(
         { error: 'Falta userId' },
         { status: 400 }
       );
+    }
+
+    // Si se solicita limpiar el historial, lo borramos antes de procesar
+    if (clearHistory) {
+      await saveHistory(`${userId}_${clientId || 'client1'}`, []);
     }
 
     // Verificar token de Firebase Auth
@@ -54,15 +59,16 @@ export async function POST(request) {
       }
     }
 
-    // Obtener historial
-    const historialActual = await prepareHistoryForGemini(userId);
+    // Obtener historial scopeado por cliente
+    const scopedUserId = `${userId}_${clientId || 'client1'}`;
+    const historialActual = await prepareHistoryForGemini(scopedUserId);
     
     // CASO ESPECIAL: Si no hay mensaje, es una petición de SALUDO INICIAL
     if (!message) {
       if (historialActual.recentMessages.length > 0) {
         // El usuario ya tiene historial, saludamos reconociéndolo
         const lastMessage = historialActual.recentMessages[historialActual.recentMessages.length - 1];
-        const contextPrompt = `El usuario ha vuelto al chat. Su historial tiene ${historialActual.totalMessages} mensajes. Salúdalo de forma breve y profesional como OVNI Assistant, reconociendo que ha vuelto.`;
+        const contextPrompt = `El usuario ha vuelto al chat. Su historial tiene ${historialActual.totalMessages} mensajes. Salúdalo de forma breve y profesional, reconociendo que ha vuelto.`;
         
         const iaResponse = await generateResponse(
           contextPrompt, 
@@ -79,7 +85,7 @@ export async function POST(request) {
       } else {
         // Usuario nuevo, saludo inicial estándar generado por IA
         const iaResponse = await generateResponse(
-          "Genera un saludo inicial creativo, breve y profesional para un nuevo usuario. Preséntate como OVNI Assistant de OVNI Studio. Explica que puedes ayudar con landing pages, automatización e IA.", 
+          "Genera un saludo inicial creativo y breve. Si eres el asistente principal preséntate y ofrece ayuda con automatización e IA. Si eres el diseñador, ve directo al grano y pregunta el nombre del negocio para empezar a diseñar.", 
           [], 
           { clientId: clientId || 'client1' },
           null
@@ -95,7 +101,6 @@ export async function POST(request) {
     // FLUJO NORMAL: Procesar mensaje del usuario
     const historialParaIA = [...historialActual.recentMessages, { role: 'user', content: message }];
 
-
     // Generar respuesta directamente (sin intention classifier para evitar llamada extra)
     // generateResponse ya incluye RAG internamente
     const iaResponse = await generateResponse(
@@ -105,9 +110,9 @@ export async function POST(request) {
       null // sin summary para evitar llamada extra
     );
 
-    // Actualizar historial
+    // Actualizar historial scopeado
     const historialFinal = [...historialParaIA, { role: 'bot', content: iaResponse.respuesta }];
-    await saveHistory(userId, historialFinal);
+    await saveHistory(scopedUserId, historialFinal);
 
     return NextResponse.json({
       userText: message,
