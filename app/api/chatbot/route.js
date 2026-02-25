@@ -66,24 +66,15 @@ export async function POST(request) {
     // CASO ESPECIAL: Si no hay mensaje, es una petición de SALUDO INICIAL
     if (!message) {
       if (historialActual.recentMessages.length > 0) {
-        // El usuario ya tiene historial, saludamos reconociéndolo
-        const lastMessage = historialActual.recentMessages[historialActual.recentMessages.length - 1];
-        const contextPrompt = `El usuario ha vuelto al chat. Su historial tiene ${historialActual.totalMessages} mensajes. Salúdalo de forma breve y profesional, reconociendo que ha vuelto.`;
-        
-        const iaResponse = await generateResponse(
-          contextPrompt, 
-          historialActual.recentMessages, 
-          { clientId: clientId || 'client1' },
-          null
-        );
-        
+        // El usuario ya tiene historial, lo devolvemos para que el frontend lo monte
+        // No necesitamos generar un nuevo saludo de la IA, el frontend mostrará la historia
         return NextResponse.json({
-          reply: iaResponse.respuesta,
+          reply: null, // No hay mensaje nuevo, solo history
           isNewUser: false,
           history: historialActual.recentMessages
         });
       } else {
-        // Usuario nuevo, saludo inicial estándar generado por IA
+        // Usuario nuevo o historial limpio, saludo inicial estándar generado por IA
         const iaResponse = await generateResponse(
           "Genera un saludo inicial creativo y breve. Si eres el asistente principal preséntate y ofrece ayuda con automatización e IA. Si eres el diseñador, ve directo al grano y pregunta el nombre del negocio para empezar a diseñar.", 
           [], 
@@ -91,9 +82,13 @@ export async function POST(request) {
           null
         );
         
+        // Guardamos este primer mensaje del bot en el historial para que no se pierda
+        await saveHistory(scopedUserId, [{ role: 'bot', content: iaResponse.respuesta }]);
+        
         return NextResponse.json({
           reply: iaResponse.respuesta,
-          isNewUser: true
+          isNewUser: true,
+          history: [{ role: 'bot', content: iaResponse.respuesta }]
         });
       }
     }
