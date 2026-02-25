@@ -9,7 +9,37 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [viewportHeight, setViewportHeight] = useState('85px')
+  const [chatMaxHeight, setChatMaxHeight] = useState('520px')
   const messagesEndRef = useRef(null)
+
+  // Manejar el redimensionamiento del viewport (teclado mobile)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return
+
+    const handleVisualViewportChange = () => {
+      const vv = window.visualViewport
+      const isKeyboardOpen = vv.height < window.innerHeight * 0.8
+      
+      if (isKeyboardOpen) {
+        // Calcular cuánto se debe subir el chat (espacio del teclado)
+        const offset = window.innerHeight - vv.height
+        setViewportHeight(`${offset + 10}px`)
+        setChatMaxHeight(`${vv.height - 80}px`)
+      } else {
+        setViewportHeight('85px')
+        setChatMaxHeight('520px')
+      }
+    }
+
+    window.visualViewport.addEventListener('resize', handleVisualViewportChange)
+    window.visualViewport.addEventListener('scroll', handleVisualViewportChange)
+    
+    return () => {
+      window.visualViewport.removeEventListener('resize', handleVisualViewportChange)
+      window.visualViewport.removeEventListener('scroll', handleVisualViewportChange)
+    }
+  }, [])
 
   // Recuperar mensajes de la sesión actual al cargar
   useEffect(() => {
@@ -162,7 +192,13 @@ export default function ChatWidget() {
 
       {/* Ventana de chat mejorada */}
       {isOpen && (
-        <div style={styles.chatWindow}>
+        <div style={{
+          ...styles.chatWindow,
+          bottom: viewportHeight,
+          maxHeight: chatMaxHeight,
+          width: isMobile ? 'calc(100% - 40px)' : '320px'
+        }}>
+
           {/* Header con efecto de energía */}
           <div style={styles.chatHeader}>
             <div style={styles.headerContent}>
