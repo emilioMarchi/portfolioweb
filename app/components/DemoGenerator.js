@@ -11,7 +11,7 @@ export default function DemoGenerator() {
   const [currentStep, setCurrentStep] = useState('chat') // chat | generating | preview
   const [isMobile, setIsMobile] = useState(false)
   const chatMessagesRef = useRef(null)
-  const hasFetchedInitial = useRef(false)
+  const hasFetchedInitial = useRef(false) // Control para que initDesigner se ejecute solo una vez al cargar
 
   const scrollToBottom = () => {
     if (chatMessagesRef.current) {
@@ -28,154 +28,157 @@ export default function DemoGenerator() {
   }, [])
 
   useEffect(() => {
-    // Pequeño delay para asegurar que el mensaje se renderizó
+    // Pequeño delay para asegurar que el mensaje se renderizó antes del scroll
     setTimeout(scrollToBottom, 50)
   }, [messages])
 
-  // Recuperar estado de la sesión actual al cargar
+  // Carga inicial de la previewData y el historial del chat
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
-      const savedPreview = localStorage.getItem(`ovni_demo_preview_${userId}`)
-      
-      if (savedPreview) {
-        setPreviewData(JSON.parse(savedPreview))
-        setCurrentStep('preview')
-      }
-    }
-  }, [])
-
-  // Guardar preview en la sesión cada vez que cambia
-  useEffect(() => {
-    if (typeof window !== 'undefined' && previewData) {
-      const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
-      localStorage.setItem(`ovni_demo_preview_${userId}`, JSON.stringify(previewData))
-    }
-  }, [previewData])
-
-  // Carga inicial y recuperación de historial desde el backend
-  useEffect(() => {
-    if (hasFetchedInitial.current) return;
+    if (hasFetchedInitial.current) return; // Asegurar que solo se ejecute una vez
     
     const initDesigner = async () => {
-      hasFetchedInitial.current = true
-      setIsLoading(true)
+      hasFetchedInitial.current = true; // Marcar como inicializado
+      setIsLoading(true);
+      const userId = localStorage.getItem('ovni_user_id') || 'temp_user';
+
+      // 1. Intentar recuperar previewData de localStorage primero
+      const savedPreview = localStorage.getItem(`ovni_demo_preview_${userId}`);
+      if (savedPreview) {
+        setPreviewData(JSON.parse(savedPreview));
+        setCurrentStep('preview');
+        setIsLoading(false);
+        // Si hay preview, aún así cargamos el historial para mantener la conversación si vuelven al chat
+        const response = await fetch('/api/chatbot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, clientId: 'site-designer', message: '' })
+        });
+        const data = await response.json();
+        if (data.history && data.history.length > 0) {
+          setMessages(data.history.map(m => ({ role: m.role, content: m.content })));
+        }
+        return;
+      }
+
+      // 2. Si no hay preview, intentar recuperar historial del chat desde el backend
       try {
-        const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
         const response = await fetch('/api/chatbot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             userId, 
             clientId: 'site-designer', 
-            message: ''
+            message: '' // Petición de saludo/historial
           })
-        })
-        const data = await response.json()
+        });
+        const data = await response.json();
         
-        // Si el backend nos devuelve historial, lo usamos (sincronización real)
         if (data.history && data.history.length > 0) {
-          setMessages(data.history.map(m => ({ role: m.role, content: m.content })))
-          
-          // Revisar si ya se había generado un sitio en esta sesión
-          const lastBotMsg = data.history.slice().reverse().find(m => m.role === 'bot');
-          if (lastBotMsg && lastBotMsg.content.includes('"generar_sitio"')) {
-            try {
-              const jsonMatch = lastBotMsg.content.match(/\{[\s\S]*"generar_sitio"[\s\S]*\}/);
-              if (jsonMatch) {
-                const siteData = JSON.parse(jsonMatch[0]);
-                setPreviewData(siteData);
-                setCurrentStep('preview');
-              }
-            } catch (e) {
-              console.error("Error recuperando sitio del historial", e);
-            }
-          }
+          setMessages(data.history.map(m => ({ role: m.role, content: m.content })));
         } else if (data.reply) {
-          // Si no hay historial, es usuario nuevo, usamos el saludo
-          setMessages([{ role: 'bot', content: data.reply }])
+          // 3. Si no hay historial, es usuario nuevo o limpio, usar el saludo devuelto por la API
+          setMessages([{ role: 'bot', content: data.reply }]);
         }
       } catch (e) {
-        setMessages([{ role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }])
+        console.error("Error en initDesigner:", e);
+        setMessages([{ role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }]);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
     
-    initDesigner()
-  }, [])
+    initDesigner();
+  }, []);
+
+  // Guardar preview en localStorage cuando cambia
+  useEffect(() => {
+    if (typeof window !== 'undefined' && previewData) {
+      const userId = localStorage.getItem('ovni_user_id') || 'temp_user';
+      localStorage.setItem(`ovni_demo_preview_${userId}`, JSON.stringify(previewData));
+    }
+  }, [previewData]);
 
   const handleSendMessage = async (e) => {
-    e.preventDefault()
-    if (!input.trim() || isLoading) return
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
 
-    const userMessage = input.trim()
-    setInput('')
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
-    setIsLoading(true)
+    const userMessage = input.trim();
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setIsLoading(true);
 
     try {
-      const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
+      const userId = localStorage.getItem('ovni_user_id') || 'temp_user';
       const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId, 
-          clientId: 'site-designer', 
-          message: userMessage 
+        body: JSON.stringify({
+          userId,
+          clientId: 'site-designer',
+          message: userMessage
         })
-      })
+      });
 
-      const data = await response.json()
-      
+      const data = await response.json();
+
       if (data.reply) {
-        setMessages(prev => [...prev, { role: 'bot', content: data.reply }])
-        
+        setMessages(prev => [...prev, { role: 'bot', content: data.reply }]);
+
         if (data.accion === 'GENERATE_SITE' && data.target) {
-          const config = JSON.parse(data.target)
-          setPreviewData(config)
-          setCurrentStep('generating')
-          // Simular proceso de generación
-          setTimeout(() => setCurrentStep('preview'), 3000)
+          const config = JSON.parse(data.target);
+          setPreviewData(config);
+          setCurrentStep('generating');
+          setTimeout(() => setCurrentStep('preview'), 3000);
         }
+      } else if (data.history && data.history.length > 0) {
+         // Si no hay reply, pero hay historial, lo mostramos para mantener la conversación
+         setMessages(data.history.map(m => ({ role: m.role, content: m.content })));
       }
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Error:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleReset = async () => {
-    const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
-    setCurrentStep('chat')
-    setPreviewData(null)
-    setMessages([])
-    setInput('')
-    localStorage.removeItem(`ovni_demo_preview_${userId}`)
-    
-    setIsLoading(true)
+    const userId = localStorage.getItem('ovni_user_id') || 'temp_user';
+    setCurrentStep('chat');
+    setPreviewData(null);
+    setMessages([]);
+    setInput('');
+    localStorage.removeItem(`ovni_demo_preview_${userId}`);
+    sessionStorage.removeItem('ovni_demo_session'); // Limpiar también la sesión del chat
+    hasFetchedInitial.current = false; // Permitir que se vuelva a inicializar
+
+    setIsLoading(true);
     try {
       const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId, 
-          clientId: 'site-designer', 
-          message: '', 
-          clearHistory: true 
+        body: JSON.stringify({
+          userId,
+          clientId: 'site-designer',
+          message: '',
+          clearHistory: true
         })
-      })
-      const data = await response.json()
+      });
+      const data = await response.json();
       if (data.reply) {
-        setMessages([{ role: 'bot', content: data.reply }])
+        setMessages([{ role: 'bot', content: data.reply }]);
+      } else if (data.history && data.history.length > 0) {
+        // Si el backend devuelve historial después de limpiar (no debería, pero por si acaso)
+        setMessages(data.history.map(m => ({ role: m.role, content: m.content })));
+      } else {
+        setMessages([{ role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }]);
       }
     } catch (e) {
-      setMessages([{ role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }])
+      console.error("Error en handleReset:", e);
+      setMessages([{ role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div id="demo" style={{
@@ -275,7 +278,7 @@ export default function DemoGenerator() {
                   onClick={() => {
                     const slug = previewData.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
                     const p = previewData.colores?.primary?.replace('#', '') || '6366f1';
-                    const s = previewData.colores?.secondary?.replace('#', '') || '0ea5e9';
+                    const s = previewData.colores?.secondary?.replace('#', '') || '0ea5e0'; // Corregido a un hex válido
                     const desc = encodeURIComponent(previewData.descripcion || '');
                     
                     const targetUrl = `/site-preview/${slug}?tipo=${previewData.tipo || 'landing'}&p=${p}&s=${s}&desc=${desc}`;
@@ -308,7 +311,7 @@ export default function DemoGenerator() {
         }
       `}</style>
     </div>
-  )
+  );
 }
 
 const styles = {

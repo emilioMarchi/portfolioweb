@@ -1,35 +1,45 @@
 'use client'
 
-import { useRef } from 'react'
-import { motion, useScroll, useTransform, useInView } from 'framer-motion'
+import { useRef, useEffect } from 'react'
+import { motion, useInView } from 'framer-motion'
 
-export default function ScrollSection({ children, id, direction = 'up' }) {
+export default function ScrollSection({ children, id, direction = 'up', initialDelay = 0 }) {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: false, margin: "0px" })
+  const isInView = useInView(ref, { once: false, margin: "-100px 0px -100px 0px" }) // Ampliar margen de detección
 
-  
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"]
-  })
-  
-  // Animaciones de desvanecimiento basadas puramente en scroll para la salida
-  const opacityScroll = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0])
-  const scaleScroll = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.9, 1, 1, 0.9])
-  
   // Definir la posición inicial según la dirección
   const getInitialPos = () => {
     switch (direction) {
-      case 'up': return { y: 100, x: 0 }
-      case 'down': return { y: -100, x: 0 }
-      case 'left': return { y: 0, x: 100 }
-      case 'right': return { y: 0, x: -100 }
+      case 'up': return { y: 80, x: 0 }
+      case 'down': return { y: -80, x: 0 }
+      case 'left': return { y: 0, x: 80 }
+      case 'right': return { y: 0, x: -80 }
+      case 'fade': return { y: 0, x: 0 } // Para el DemoGenerator
       default: return { y: 0, x: 0 }
     }
   }
 
   const initialPos = getInitialPos()
-  
+
+  const variants = {
+    hidden: {
+      opacity: 0,
+      scale: 0.95,
+      ...initialPos,
+    },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      x: 0,
+      transition: {
+        duration: 0.8,
+        ease: [0.16, 1, 0.3, 1],
+        delay: initialDelay, // Permite retrasar la animación si es necesario
+      }
+    },
+  };
+
   return (
     <section 
       ref={ref} 
@@ -44,31 +54,19 @@ export default function ScrollSection({ children, id, direction = 'up' }) {
         padding: 0,
         margin: 0,
         overflowX: 'hidden',
+        // Eliminar propiedades que Lenis ya controla o que causan conflicto
+        // perspective: '1000px', // Evitar transformaciones 3D si no son necesarias
       }}
     >
       <motion.div
+        variants={variants}
+        initial="hidden"
+        animate={isInView ? "visible" : "hidden"}
         style={{
-          opacity: opacityScroll,
-          scale: scaleScroll,
           width: '100%',
-        }}
-        initial={{ 
-          opacity: 0, 
-          scale: 0.9,
-          ...initialPos 
-        }}
-        animate={isInView ? { 
-          opacity: 1, 
-          scale: 1,
-          y: 0,
-          x: 0
-        } : { 
-          opacity: 0,
-          ...initialPos
-        }}
-        transition={{ 
-          duration: 1, 
-          ease: [0.16, 1, 0.3, 1] 
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         {children}
