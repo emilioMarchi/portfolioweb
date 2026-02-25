@@ -152,7 +152,7 @@ export default function Productos() {
 const styles = {
   section: {
     position: 'relative',
-    padding: '1rem',
+    padding: '4rem 1rem 1rem 1rem', // Aumentado el padding top de 1rem a 4rem
     backgroundColor: 'transparent',
     overflow: 'hidden',
     width: '100%',
