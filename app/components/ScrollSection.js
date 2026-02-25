@@ -5,7 +5,8 @@ import { motion, useScroll, useTransform, useInView } from 'framer-motion'
 
 export default function ScrollSection({ children, id, direction = 'up' }) {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: false, margin: "-100px" })
+  const isInView = useInView(ref, { once: false, margin: "0px" })
+
   
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -47,9 +48,9 @@ export default function ScrollSection({ children, id, direction = 'up' }) {
         position: 'relative',
         padding: 0,
         margin: 0,
-        scrollSnapAlign: 'start',
-        scrollSnapStop: 'always',
-        overflow: 'hidden',
+        // scrollSnapAlign: 'start',
+        // scrollSnapStop: 'always',
+        overflowX: 'hidden',
       }}
     >
       <motion.div
@@ -58,6 +59,7 @@ export default function ScrollSection({ children, id, direction = 'up' }) {
           x: direction === 'right' || direction === 'left' ? finalX : 0,
           opacity,
           scale,
+          width: '100%',
         }}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={isInView ? { opacity: 1, scale: 1 } : {}}

@@ -86,6 +86,16 @@ export default function Hero() {
   const handleChat = () => {
     setShowChat(true)
     openChat()
+    
+    // Si es mobile, centrar la vista en el chat
+    if (window.innerWidth < 768) {
+      setTimeout(() => {
+        const chatElement = document.getElementById('hero-chat-wrapper');
+        if (chatElement) {
+          chatElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
   }
 
   const handleCloseChat = () => {
@@ -94,7 +104,7 @@ export default function Hero() {
   }
 
   return (
-    <section id="hero" style={styles.hero}>
+    <section id="hero" className="hero-section">
       <div className={`hero-container ${showChat ? 'chat-active' : ''}`}>
         
         <div style={{
@@ -137,7 +147,7 @@ export default function Hero() {
         </div>
         
         {showChat && !isInitializing && (
-          <div className="chat-wrapper">
+          <div id="hero-chat-wrapper" className="chat-wrapper">
             <ChatPanel userId={userId} apiKey={apiKey} onClose={handleCloseChat} />
           </div>
         )}
@@ -334,15 +344,6 @@ function ChatPanel({ userId, apiKey, onClose }) {
 }
 
 const styles = {
-  hero: {
-    position: 'relative',
-    minHeight: '100vh',
-    width: '100%',
-    background: 'transparent',
-    display: 'flex',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
   container: {
     width: '100%',
     margin: '0 auto',
@@ -381,7 +382,7 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '6px 14px',
+    padding: '',
     backgroundColor: 'rgba(20, 184, 166, 0.1)',
     borderRadius: '50px',
     color: '#5eead4',
@@ -391,9 +392,9 @@ const styles = {
   },
   badgeDot: { width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e' },
   buttons: { display: 'flex', gap: '1rem', marginTop: '20px', transition: 'all 0.3s ease' },
-  primaryButton: {
+primaryButton: {
     padding: '0.8rem 1.5rem',
-    background: 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
+    background: 'var(--color-primary)',
     border: 'none',
     borderRadius: '30px',
     color: '#fff',
@@ -422,11 +423,11 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
   },
-  chatAvatar: {
+chatAvatar: {
     width: '22px',
     height: '22px',
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
+    background: 'var(--color-primary)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -457,11 +458,11 @@ const styles = {
     gap: '8px',
     alignItems: 'flex-end',
   },
-  botAvatar: {
+botAvatar: {
     width: '18px',
     height: '18px',
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
+    background: 'var(--color-primary)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

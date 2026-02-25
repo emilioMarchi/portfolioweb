@@ -152,7 +152,7 @@ export default function Productos() {
 const styles = {
   section: {
     position: 'relative',
-    padding: '3rem 1.5rem',
+    padding: '1rem',
     backgroundColor: 'transparent',
     overflow: 'hidden',
     width: '100%',
@@ -160,7 +160,7 @@ const styles = {
   container: {
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: '0 1rem',
+    padding: '0',
     width: '100%',
   },
   header: {
