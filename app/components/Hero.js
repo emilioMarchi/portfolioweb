@@ -70,7 +70,7 @@ export default function Hero() {
 
   useEffect(() => {
     let i = 0
-    const fullMessage = "// LA TECNOLOGÍA DEBERÍA SER PARA TODOS.\n// CREAMOS HERRAMIENTAS QUE CONECTAN,\n// AUTOMATIZAN Y HACEN CRECER TU NEGOCIO."
+    const fullMessage = "// TRANSFORMEMOS TECNOLOGÍA EN COMUNICACIÓN.\n// CREEMOS JUNTOS HERRAMIENTAS QUE\n// CONECTAN Y HACEN CRECER TU NEGOCIO."
     const timer = setInterval(() => {
       if (i <= fullMessage.length) {
         setMessage(fullMessage.slice(0, i))
