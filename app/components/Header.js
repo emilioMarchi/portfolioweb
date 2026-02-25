@@ -5,22 +5,15 @@ import { useState, useEffect } from 'react'
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50)
     }
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
     handleScroll()
-    checkMobile()
     window.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('resize', checkMobile)
     return () => {
       window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('resize', checkMobile)
     }
   }, [])
 
@@ -31,7 +24,7 @@ export default function Header() {
       ...styles.header,
       opacity: isScrolled ? 0.95 : 0.9,
     }}>
-      <div style={{...styles.container, ...(isMobile ? styles.containerMobile : {})}}>
+      <div style={styles.container}>
         <a href="#" style={styles.logo} onClick={closeMenu}>
           <div style={styles.logoIcon}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -52,37 +45,34 @@ export default function Header() {
         </a>
         
         {/* Desktop Nav */}
-        {!isMobile && (
-          <nav style={styles.nav}>
-            <a href="#productos" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Productos</a>
-            <a href="#servicios" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Servicios</a>
-            <a href="#proceso" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Proceso</a>
-            <a href="#tecnica" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Técnica</a>
-            <a href="#contacto" style={styles.ctaButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.3)'; e.target.style.boxShadow = '0 0 30px rgba(20, 184, 166, 0.5)'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.15)'; e.target.style.boxShadow = '0 0 20px rgba(20, 184, 166, 0.25)'; }}>
-              Contacto
-            </a>
-          </nav>
-        )}
+        <nav style={styles.nav} className="desktop-only">
+          <a href="#productos" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Productos</a>
+          <a href="#servicios" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Servicios</a>
+          <a href="#proceso" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Proceso</a>
+          <a href="#tecnica" style={styles.navButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.2)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.7)'; e.target.style.color = '#5eead4'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.08)'; e.target.style.borderColor = 'rgba(20, 184, 166, 0.4)'; e.target.style.color = '#94a3b8'; }}>Técnica</a>
+          <a href="#contacto" style={styles.ctaButton} onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.3)'; e.target.style.boxShadow = '0 0 30px rgba(20, 184, 166, 0.5)'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(20, 184, 166, 0.15)'; e.target.style.boxShadow = '0 0 20px rgba(20, 184, 166, 0.25)'; }}>
+            Contacto
+          </a>
+        </nav>
         
         {/* Mobile Menu Button */}
-        {isMobile && (
-          <button 
-            style={styles.mobileMenuBtn} 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              {mobileMenuOpen ? (
-                <path d="M6 18L18 6M6 6l12 12"/>
-              ) : (
-                <path d="M3 12h18M3 6h18M3 18h18"/>
-              )}
-            </svg>
-          </button>
-        )}
+        <button 
+          style={styles.mobileMenuBtn} 
+          className="mobile-only"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            {mobileMenuOpen ? (
+              <path d="M6 18L18 6M6 6l12 12"/>
+            ) : (
+              <path d="M3 12h18M3 6h18M3 18h18"/>
+            )}
+          </svg>
+        </button>
         
         {/* Mobile Menu */}
-        {isMobile && mobileMenuOpen && (
-          <div style={styles.mobileMenu}>
+        {mobileMenuOpen && (
+          <div style={styles.mobileMenu} className="mobile-only-menu">
             <a href="#productos" style={styles.mobileNavLink} onClick={closeMenu}>Productos</a>
             <a href="#servicios" style={styles.mobileNavLink} onClick={closeMenu}>Servicios</a>
             <a href="#proceso" style={styles.mobileNavLink} onClick={closeMenu}>Proceso</a>
@@ -109,11 +99,13 @@ const styles = {
   container: {
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: '0 2rem',
+    padding: '0 1rem',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     position: 'relative',
+    flexWrap: 'wrap',
+    width: '100%',
   },
   logo: {
     display: 'flex',
@@ -170,11 +162,6 @@ const styles = {
     border: 'none',
     color: 'var(--color-text)',
     cursor: 'pointer',
-  },
-  containerMobile: {
-    padding: '0 1rem',
-    width: '100%',
-    flexWrap: 'wrap',
   },
   mobileMenu: {
     position: 'absolute',

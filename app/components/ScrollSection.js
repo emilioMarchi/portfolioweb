@@ -17,10 +17,10 @@ export default function ScrollSection({ children, id, direction = 'up' }) {
   const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0])
   const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.8, 1, 1])
   
-  // Dirección alternativa
+  // Dirección alternativa (reducida para evitar desbordes en móvil)
   const yReverse = useTransform(scrollYProgress, [0, 1], [-100, 0])
-  const xLeft = useTransform(scrollYProgress, [0, 1], [-100, 0])
-  const xRight = useTransform(scrollYProgress, [0, 1], [100, 0])
+  const xLeft = useTransform(scrollYProgress, [0, 1], ['-10vw', '0vw'])
+  const xRight = useTransform(scrollYProgress, [0, 1], ['10vw', '0vw'])
   
   // Seleccionar la transformación según la dirección
   let finalY = y
@@ -40,7 +40,7 @@ export default function ScrollSection({ children, id, direction = 'up' }) {
       id={id}
       style={{
         minHeight: '100vh',
-        width: '100%',
+        width: '100vw',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -49,6 +49,7 @@ export default function ScrollSection({ children, id, direction = 'up' }) {
         margin: 0,
         scrollSnapAlign: 'start',
         scrollSnapStop: 'always',
+        overflow: 'hidden',
       }}
     >
       <motion.div
