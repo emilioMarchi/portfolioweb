@@ -9,6 +9,7 @@ import Servicios from './components/Servicios'
 import Proceso from './components/Proceso'
 import Tecnica from './components/Tecnica'
 import Contacto from './components/Contacto'
+import DemoGenerator from './components/DemoGenerator'
 import ChatWidget from './components/ChatWidget'
 
 export default function Home() {
@@ -19,6 +20,10 @@ export default function Home() {
         
         <ScrollSection id="hero" direction="up">
           <Hero />
+        </ScrollSection>
+
+        <ScrollSection id="demo" direction="fade">
+          <DemoGenerator />
         </ScrollSection>
         
         <ScrollSection id="productos" direction="left">

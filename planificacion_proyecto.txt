@@ -167,6 +167,31 @@ PRIORIDADES INMEDIATAS
 4. ✓ ChatWidget con identidad OVNI
 
 PRÓXIMOS PASOS:
-- Implementar Fase 5: Scroll por secciones + Estilo vintage
+- [ ] Modularizar agente IA (Roles por clientId)
+- [ ] Implementar rol "site-designer" (Recolección de datos + Function Calling)
+- [ ] Integrar con site-generator (Trigger de generación desde chat)
+- [ ] Implementar Fase 5: Scroll por secciones + Estilo vintage
+
+================================================================================
+NUEVOS REQUERIMIENTOS - GENERADOR & AGENTE MODULAR
+================================================================================
+
+1. Agente Modular:
+   - El sistema debe soportar múltiples roles (soporte, diseñador, ventas) mediante el parámetro clientId.
+   - Cada rol tiene sus propias systemInstructions y herramientas (functions).
+
+2. Rol "Site Designer":
+   - Objetivo: Guiar al usuario para crear su web.
+   - Tarea: Recolectar Nombre, Rubro, Colores, Descripción.
+   - Salida: Generar archivos JSON de configuración y business data.
+   - Tool: create_site_config(config_json, business_text).
+
+3. Arquitectura de Generación:
+   - Portfolio (Vercel): Frontend + Agente (Chat).
+   - Worker (VPS/Docker): Ejecuta el proceso pesado (npm install, build, deploy).
+   - Comunicación: Webhook/API entre Portfolio y Worker.
+
+4. Preview en Tiempo Real:
+   - El agente genera un JSON que se renderiza en un iframe antes del deploy final.
 
 ================================================================================
