@@ -13,27 +13,22 @@ export default function ScrollSection({ children, id, direction = 'up' }) {
     offset: ["start end", "end start"]
   })
   
-  // Animaciones basadas en la dirección
-  const y = useTransform(scrollYProgress, [0, 1], [100, 0])
-  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0])
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.8, 1, 1])
+  // Animaciones de desvanecimiento basadas puramente en scroll para la salida
+  const opacityScroll = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0])
+  const scaleScroll = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.9, 1, 1, 0.9])
   
-  // Dirección alternativa (reducida para evitar desbordes en móvil)
-  const yReverse = useTransform(scrollYProgress, [0, 1], [-100, 0])
-  const xLeft = useTransform(scrollYProgress, [0, 1], ['-10vw', '0vw'])
-  const xRight = useTransform(scrollYProgress, [0, 1], ['10vw', '0vw'])
-  
-  // Seleccionar la transformación según la dirección
-  let finalY = y
-  if (direction === 'down') finalY = yReverse
-  if (direction === 'left') {
-    finalY = y
-    var finalX = xRight
+  // Definir la posición inicial según la dirección
+  const getInitialPos = () => {
+    switch (direction) {
+      case 'up': return { y: 100, x: 0 }
+      case 'down': return { y: -100, x: 0 }
+      case 'left': return { y: 0, x: 100 }
+      case 'right': return { y: 0, x: -100 }
+      default: return { y: 0, x: 0 }
+    }
   }
-  if (direction === 'right') {
-    finalY = y
-    var finalX = xLeft
-  }
+
+  const initialPos = getInitialPos()
   
   return (
     <section 
@@ -48,24 +43,32 @@ export default function ScrollSection({ children, id, direction = 'up' }) {
         position: 'relative',
         padding: 0,
         margin: 0,
-        // scrollSnapAlign: 'start',
-        // scrollSnapStop: 'always',
         overflowX: 'hidden',
       }}
     >
       <motion.div
         style={{
-          y: direction === 'right' || direction === 'left' ? 0 : finalY,
-          x: direction === 'right' || direction === 'left' ? finalX : 0,
-          opacity,
-          scale,
+          opacity: opacityScroll,
+          scale: scaleScroll,
           width: '100%',
         }}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={isInView ? { opacity: 1, scale: 1 } : {}}
+        initial={{ 
+          opacity: 0, 
+          scale: 0.9,
+          ...initialPos 
+        }}
+        animate={isInView ? { 
+          opacity: 1, 
+          scale: 1,
+          y: 0,
+          x: 0
+        } : { 
+          opacity: 0,
+          ...initialPos
+        }}
         transition={{ 
-          duration: 0.8, 
-          ease: [0.16, 1, 0.3, 1] // cubic-bezier para sensación premium
+          duration: 1, 
+          ease: [0.16, 1, 0.3, 1] 
         }}
       >
         {children}

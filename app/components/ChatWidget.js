@@ -56,7 +56,8 @@ export default function ChatWidget() {
           })
           const data = await response.json()
           if (data.reply) {
-            setMessages([{ role: 'bot', content: data.reply, typing: true }])
+            // Solo activar typing si es un mensaje nuevo que no estaba en sesión
+            setMessages([{ role: 'bot', content: '', fullContent: data.reply, typing: true }])
           }
         } catch (e) {
           setMessages([{ role: 'bot', content: '¡Hola! ¿Cómo puedo ayudarte?', typing: false }])
@@ -68,27 +69,37 @@ export default function ChatWidget() {
     }
   }, [isOpen, userId])
 
-  // Client ID para OVNI Studio
-  const clientId = 'client1'
-
-  // Sincronizar estado interno con contexto
-
+  // Efecto Typewriter para mensajes nuevos
   useEffect(() => {
-    if (isChatOpen !== isOpen) {
-      setIsOpen(isChatOpen)
+    const lastMsg = messages[messages.length - 1]
+    if (lastMsg && lastMsg.role === 'bot' && lastMsg.typing && lastMsg.fullContent) {
+      let i = 0
+      const timer = setInterval(() => {
+        if (i <= lastMsg.fullContent.length) {
+          setMessages(prev => {
+            const newMsgs = [...prev]
+            newMsgs[newMsgs.length - 1] = {
+              ...newMsgs[newMsgs.length - 1],
+              content: lastMsg.fullContent.slice(0, i)
+            }
+            return newMsgs
+          })
+          i++
+        } else {
+          clearInterval(timer)
+          setMessages(prev => {
+            const newMsgs = [...prev]
+            newMsgs[newMsgs.length - 1] = {
+              ...newMsgs[newMsgs.length - 1],
+              typing: false
+            }
+            return newMsgs
+          })
+        }
+      }, 20)
+      return () => clearInterval(timer)
     }
-  }, [isChatOpen])
-
-  // Actualizar contexto cuando cambia el estado interno
-  useEffect(() => {
-    if (isOpen !== isChatOpen) {
-      if (isOpen) {
-        openChat()
-      } else {
-        closeChat()
-      }
-    }
-  }, [isOpen])
+  }, [messages.length > 0 && messages[messages.length - 1]?.typing])
 
   const sendMessage = async (e) => {
     e.preventDefault()
@@ -96,7 +107,7 @@ export default function ChatWidget() {
 
     const userMessage = input.trim()
     setInput('')
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
+    setMessages(prev => [...prev, { role: 'user', content: userMessage, typing: false }])
     setIsLoading(true)
 
     try {
@@ -115,7 +126,7 @@ export default function ChatWidget() {
       const data = await response.json()
       
       if (data.reply) {
-        setMessages(prev => [...prev, { role: 'bot', content: data.reply, typing: true }])
+        setMessages(prev => [...prev, { role: 'bot', content: '', fullContent: data.reply, typing: true }])
       } else {
         setMessages(prev => [...prev, { role: 'bot', content: 'Disculpa, tuve un problema al procesar tu solicitud. Intenta de nuevo.', typing: false }])
       }
@@ -126,6 +137,7 @@ export default function ChatWidget() {
       setIsLoading(false)
     }
   }
+
 
   return (
     <>
@@ -193,14 +205,18 @@ export default function ChatWidget() {
                     </svg>
                   </div>
                 )}
-                <div 
-                  style={{
-                    ...styles.message,
-                    backgroundColor: msg.role === 'user' ? 'var(--color-primary)' : 'var(--color-surface)',
-                    color: msg.role === 'user' ? '#fff' : 'var(--color-text)',
-                    border: msg.role === 'bot' ? '1px solid var(--color-border)' : 'none',
-                  }}
-                >
+                  <div 
+                    style={{
+                      ...styles.message,
+                      backgroundColor: msg.role === 'user' ? 'rgba(20, 184, 166, 0.15)' : 'rgba(30, 30, 50, 0.6)',
+                      color: msg.role === 'user' ? '#5eead4' : '#e2e8f0',
+                      border: msg.role === 'user' ? '1px solid rgba(20, 184, 166, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
+                      alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                      borderBottomRightRadius: msg.role === 'user' ? '4px' : '16px',
+                      borderBottomLeftRadius: msg.role === 'bot' ? '4px' : '16px',
+                    }}
+                  >
+
                   {msg.content}
                   {msg.typing && msg.role === 'bot' && (
                     <span style={styles.typingIndicator}>

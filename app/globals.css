@@ -410,73 +410,68 @@ a:hover {
   width: 100%;
   background: transparent;
   display: flex;
-  align-items: flex-start; /* Subir contenido en móvil */
-  height: auto; /* Permitir que se expanda si el contenido es más alto */
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .hero-container {
   width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 100px 1rem 60px 1rem;
+  padding: 80px 2rem;
   display: flex;
-  transition: all 0.5s ease-in-out;
-  z-index: 2;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
-  justify-content: flex-start;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 2;
   box-sizing: border-box;
 }
 
 .hero-container.chat-active {
-  gap: 20px;
-  padding-top: 80px;
+  padding-top: 100px;
+  gap: 40px;
 }
 
 .hero-message {
   font-family: 'JetBrains Mono', monospace;
   color: #5eead4;
-  line-height: 1.4;
+  line-height: 1.6;
   white-space: pre-wrap;
   transition: all 0.5s ease;
   width: 100%;
-  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
   text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+  letter-spacing: -0.02em;
 }
 
 .hero-message.chat-active {
-  font-size: clamp(1rem, 2vw, 1.3rem);
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
   text-align: left;
+  margin: 0;
+  max-width: 100%;
 }
 
 .chat-wrapper {
   width: 100%;
-  max-width: 100%;
-  animation: fadeIn 0.4s ease;
-  margin-bottom: 20px; /* Separar del final en mobile */
+  max-width: 500px;
+  animation: slideUpFade 0.5s ease forwards;
 }
 
-@media (min-width: 768px) {
-  .hero-section {
-    align-items: center;
-  }
-  .hero-container {
-    padding: 40px;
-    max-width: 800px;
-    justify-content: center;
-  }
+@media (min-width: 1024px) {
   .hero-container.chat-active {
-    max-width: 1200px;
     flex-direction: row;
-    align-items: flex-start;
-    gap: 50px;
-  }
-  .chat-wrapper {
-    flex: 1.2;
-    max-width: 480px;
-    margin-bottom: 0;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    gap: 60px;
   }
 }
+
 
 /* ========================================
    NAVIGATION INDICATOR

@@ -203,7 +203,20 @@ function ChatPanel({ userId, apiKey, onClose }) {
   // Cargar saludo inicial solo si la sesión está vacía
   useEffect(() => {
     const fetchInitialState = async () => {
-      if (!userId || messages.length > 0) return
+      if (!userId) return
+      
+      // Intentar recuperar sesión actual de sessionStorage
+      if (typeof window !== 'undefined') {
+        const savedSession = sessionStorage.getItem('ovni_hero_session')
+        if (savedSession) {
+          const parsed = JSON.parse(savedSession)
+          if (parsed.length > 0) {
+            setMessages(parsed.map(m => ({ ...m, typing: false })))
+            return // No pedir saludo si ya hay mensajes en sesión
+          }
+        }
+      }
+
       setIsLoading(true)
       try {
         const response = await fetch('/api/chatbot', {
@@ -330,11 +343,15 @@ function ChatPanel({ userId, apiKey, onClose }) {
             )}
             <div style={{
               ...styles.chatMsg,
-              backgroundColor: 'transparent',
-              border: msg.role === 'user' ? '1px solid rgba(20, 184, 166, 0.5)' : '1px solid rgba(20, 184, 166, 0.2)',
+              backgroundColor: msg.role === 'user' ? 'rgba(20, 184, 166, 0.15)' : 'rgba(30, 30, 50, 0.4)',
+              border: msg.role === 'user' ? '1px solid rgba(20, 184, 166, 0.4)' : '1px solid rgba(20, 184, 166, 0.15)',
+              color: msg.role === 'user' ? '#5eead4' : '#e2e8f0',
               fontFamily: msg.role === 'bot' ? "'JetBrains Mono', monospace" : 'inherit',
               fontSize: msg.role === 'bot' ? '14px' : '15px',
+              borderBottomRightRadius: msg.role === 'user' ? '4px' : '14px',
+              borderBottomLeftRadius: msg.role === 'bot' ? '4px' : '14px',
             }}>
+
               {/* Loading: mostrar animación de puntos */}
               {msg.loading ? (
                 <span style={styles.dotsLoading}>
@@ -384,25 +401,32 @@ const styles = {
   content: {
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    zIndex: 1,
   },
   chatWrapper: {
-    flex: '1.2',
+    flex: '1',
     maxWidth: '480px',
     animation: 'fadeIn 0.4s ease',
   },
   chatPanel: {
-    background: 'transparent',
+    background: 'rgba(15, 15, 26, 0.6)',
     borderRadius: '20px',
     border: '1px solid rgba(20, 184, 166, 0.3)',
     padding: '15px',
     boxShadow: '0 0 30px rgba(20, 184, 166, 0.1)',
+    backdropFilter: 'blur(12px)',
   },
   message: {
     fontFamily: "'JetBrains Mono', monospace",
     color: '#5eead4',
-    lineHeight: 1.4,
+    lineHeight: 1.5,
     whiteSpace: 'pre-wrap',
     transition: 'all 0.5s ease',
+    maxWidth: '800px',
+    margin: '0 auto',
   },
   cursor: {
     animation: 'blink 1s infinite',
@@ -411,16 +435,34 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '',
-    backgroundColor: 'rgba(20, 184, 166, 0.1)',
+    padding: '6px 16px',
+    backgroundColor: 'rgba(20, 184, 166, 0.08)',
+    border: '1px solid rgba(20, 184, 166, 0.2)',
     borderRadius: '50px',
     color: '#5eead4',
-    fontSize: '11px',
-    marginBottom: '1rem',
+    fontSize: '12px',
+    fontWeight: '500',
+    marginBottom: '2rem',
     width: 'fit-content',
+    letterSpacing: '1px',
+    textTransform: 'uppercase',
   },
-  badgeDot: { width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e' },
-  buttons: { display: 'flex', gap: '1rem', marginTop: '20px', transition: 'all 0.3s ease' },
+  badgeDot: { 
+    width: '8px', 
+    height: '8px', 
+    borderRadius: '50%', 
+    backgroundColor: '#22c55e',
+    boxShadow: '0 0 10px #22c55e',
+  },
+  buttons: { 
+    display: 'flex', 
+    gap: '1.5rem', 
+    marginTop: '3rem', 
+    transition: 'all 0.3s ease',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+
   primaryButton: {
     padding: '0.8rem 1.8rem',
     background: 'transparent',
