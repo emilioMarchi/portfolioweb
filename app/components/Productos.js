@@ -71,7 +71,17 @@ export default function Productos() {
   }, [])
 
   return (
-    <section id="productos" style={{...styles.section, marginLeft: 'auto', marginRight: 'auto'}}>
+    <section 
+      id="productos" 
+      style={{
+        ...styles.section, 
+        paddingTop: isMobile ? '80px' : '4rem', // Ajuste del padding superior para mobile
+        paddingLeft: isMobile ? '20px' : '1rem', // Ajuste del padding lateral para mobile
+        paddingRight: isMobile ? '20px' : '1rem', // Ajuste del padding lateral para mobile
+        marginLeft: 'auto', 
+        marginRight: 'auto'
+      }}
+    >
       <div style={{
         ...styles.container,
         marginLeft: 'auto',
