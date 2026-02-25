@@ -9,6 +9,7 @@ export default function DemoGenerator() {
   const [isLoading, setIsLoading] = useState(false)
   const [previewData, setPreviewData] = useState(null)
   const [currentStep, setCurrentStep] = useState('chat') // chat | generating | preview
+  const [isMobile, setIsMobile] = useState(false)
   const chatMessagesRef = useRef(null)
   const hasFetchedInitial = useRef(false)
 
@@ -17,6 +18,14 @@ export default function DemoGenerator() {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
     }
   }
+
+  useEffect(() => {
+    // Detectar si es mobile
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     // Pequeño delay para asegurar que el mensaje se renderizó
@@ -128,45 +137,70 @@ export default function DemoGenerator() {
   }
 
   return (
-    <div id="demo" style={styles.container}>
+    <div id="demo" style={{
+      ...styles.container,
+      padding: isMobile ? '40px 20px' : '80px 40px',
+    }}>
       <div style={styles.header}>
-        <h2 style={styles.title}>Experimentá la Generación con IA</h2>
-        <p style={styles.subtitle}>Hablá con nuestro agente diseñador y mirá cómo cobra vida tu sitio en tiempo real.</p>
+        <h2 style={{
+          ...styles.title,
+          fontSize: isMobile ? '2rem' : '3rem',
+        }}>Experimentá la Generación con IA</h2>
+        <p style={{
+          ...styles.subtitle,
+          fontSize: isMobile ? '1rem' : '1.2rem',
+        }}>Hablá con nuestro agente diseñador y mirá cómo cobra vida tu sitio en tiempo real.</p>
       </div>
 
-      <div style={styles.workspace}>
+      <div style={{
+        ...styles.workspace,
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1.5fr',
+        height: isMobile ? 'auto' : '600px',
+        maxHeight: isMobile ? '800px' : '600px',
+      }}>
         {/* Panel de Chat Izquierdo */}
-        <div style={styles.chatPanel}>
-          <div style={styles.chatMessages} ref={chatMessagesRef}>
-            {messages.map((msg, i) => (
-              <div key={i} style={{
-                ...styles.message,
-                alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                backgroundColor: msg.role === 'user' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                border: msg.role === 'user' ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
-              }}>
-                {msg.content}
-              </div>
-            ))}
-            {isLoading && <div style={styles.loading}>Diseñador pensando...</div>}
+        {(!isMobile || currentStep === 'chat') && (
+          <div style={{
+            ...styles.chatPanel,
+            borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)',
+            paddingRight: isMobile ? '0' : '20px',
+            height: isMobile ? '500px' : '100%',
+          }}>
+            <div style={styles.chatMessages} ref={chatMessagesRef}>
+              {messages.map((msg, i) => (
+                <div key={i} style={{
+                  ...styles.message,
+                  alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                  backgroundColor: msg.role === 'user' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                  border: msg.role === 'user' ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                }}>
+                  {msg.content}
+                </div>
+              ))}
+              {isLoading && <div style={styles.loading}>Diseñador pensando...</div>}
+            </div>
+            
+            <form onSubmit={handleSendMessage} style={styles.inputArea}>
+              <input 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Escribí aquí..."
+                style={styles.input}
+                disabled={isLoading || currentStep !== 'chat'}
+              />
+              <button type="submit" style={styles.sendBtn} disabled={isLoading || currentStep !== 'chat'}>
+                Enviar
+              </button>
+            </form>
           </div>
-          
-          <form onSubmit={handleSendMessage} style={styles.inputArea}>
-            <input 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Escribí aquí..."
-              style={styles.input}
-              disabled={isLoading || currentStep !== 'chat'}
-            />
-            <button type="submit" style={styles.sendBtn} disabled={isLoading || currentStep !== 'chat'}>
-              Enviar
-            </button>
-          </form>
-        </div>
+        )}
 
         {/* Panel de Preview Derecho */}
-        <div style={styles.previewPanel}>
+        {(!isMobile || currentStep !== 'chat') && (
+          <div style={{
+            ...styles.previewPanel,
+            height: isMobile ? '500px' : '100%',
+          }}>
           {currentStep === 'chat' && (
             <div style={styles.placeholder}>
               <div style={styles.placeholderIcon}>✨</div>
@@ -215,6 +249,7 @@ export default function DemoGenerator() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       <style jsx>{`
@@ -294,6 +329,6 @@ const styles = {
   browserUrl: { flex: 1, backgroundColor: '#1a1a1a', borderRadius: '4px', padding: '4px 12px', fontSize: '0.8rem', color: '#888' },
   iframe: { flex: 1, border: 'none', backgroundColor: '#fff' },
   previewActions: { display: 'flex', gap: '10px', position: 'absolute', bottom: '20px', right: '20px' },
-  resetBtn: { padding: '10px 20px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' },
-  confirmBtn: { padding: '10px 20px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }
+  resetBtn: { padding: '8px 16px', backgroundColor: 'rgba(0,0,0,0.6)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '500', backdropFilter: 'blur(5px)' },
+  confirmBtn: { padding: '8px 16px', backgroundColor: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '500', backdropFilter: 'blur(5px)' }
 }
