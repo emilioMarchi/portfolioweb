@@ -35,32 +35,25 @@ export default function DemoGenerator() {
   // Recuperar estado de la sesión actual al cargar
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedSession = sessionStorage.getItem('ovni_demo_session')
-      const savedPreview = localStorage.getItem('ovni_demo_preview') // Cambiado a localStorage para que dure días
-      
-      if (savedSession) {
-        setMessages(JSON.parse(savedSession))
-        hasFetchedInitial.current = true // No pedir saludo inicial si ya hay sesión
-      }
+      const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
+      const savedPreview = localStorage.getItem(`ovni_demo_preview_${userId}`)
       
       if (savedPreview) {
         setPreviewData(JSON.parse(savedPreview))
-        setCurrentStep('preview') // Restaurar vista de preview directamente
+        setCurrentStep('preview')
       }
     }
   }, [])
 
-  // Guardar estado en la sesión cada vez que cambian
+  // Guardar preview en la sesión cada vez que cambia
   useEffect(() => {
-    if (messages.length > 0) {
-      sessionStorage.setItem('ovni_demo_session', JSON.stringify(messages))
+    if (typeof window !== 'undefined' && previewData) {
+      const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
+      localStorage.setItem(`ovni_demo_preview_${userId}`, JSON.stringify(previewData))
     }
-    if (previewData) {
-      localStorage.setItem('ovni_demo_preview', JSON.stringify(previewData)) // Guardar en localStorage
-    }
-  }, [messages, previewData])
+  }, [previewData])
 
-  // Saludo inicial del diseñador
+  // Carga inicial y recuperación de historial desde el backend
   useEffect(() => {
     if (hasFetchedInitial.current) return;
     
@@ -75,12 +68,31 @@ export default function DemoGenerator() {
           body: JSON.stringify({ 
             userId, 
             clientId: 'site-designer', 
-            message: '', 
-            clearHistory: true // Limpiar historial en el backend al iniciar nueva sesión
+            message: ''
           })
         })
         const data = await response.json()
-        if (data.reply) {
+        
+        // Si el backend nos devuelve historial, lo usamos (sincronización real)
+        if (data.history && data.history.length > 0) {
+          setMessages(data.history.map(m => ({ role: m.role, content: m.content })))
+          
+          // Revisar si ya se había generado un sitio en esta sesión
+          const lastBotMsg = data.history.slice().reverse().find(m => m.role === 'bot');
+          if (lastBotMsg && lastBotMsg.content.includes('"generar_sitio"')) {
+            try {
+              const jsonMatch = lastBotMsg.content.match(/\{[\s\S]*"generar_sitio"[\s\S]*\}/);
+              if (jsonMatch) {
+                const siteData = JSON.parse(jsonMatch[0]);
+                setPreviewData(siteData);
+                setCurrentStep('preview');
+              }
+            } catch (e) {
+              console.error("Error recuperando sitio del historial", e);
+            }
+          }
+        } else if (data.reply) {
+          // Si no hay historial, es usuario nuevo, usamos el saludo
           setMessages([{ role: 'bot', content: data.reply }])
         }
       } catch (e) {
@@ -90,11 +102,8 @@ export default function DemoGenerator() {
       }
     }
     
-    // Solo iniciar si no había mensajes guardados
-    if (messages.length === 0) {
-      initDesigner()
-    }
-  }, [messages.length])
+    initDesigner()
+  }, [])
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
@@ -138,16 +147,15 @@ export default function DemoGenerator() {
   }
 
   const handleReset = async () => {
+    const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
     setCurrentStep('chat')
     setPreviewData(null)
     setMessages([])
     setInput('')
-    sessionStorage.removeItem('ovni_demo_session')
-    localStorage.removeItem('ovni_demo_preview')
+    localStorage.removeItem(`ovni_demo_preview_${userId}`)
     
     setIsLoading(true)
     try {
-      const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
       const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
