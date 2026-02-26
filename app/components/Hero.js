@@ -161,6 +161,25 @@ export default function Hero() {
           </div>
         )}
       </div>
+      <style jsx>{`
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        @keyframes pulse {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.5); opacity: 0.5; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes bounce {
+          0%, 80%, 100% { transform: scale(0); opacity: 0; }
+          40% { transform: scale(1.0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </section>
   )
 }
@@ -217,7 +236,10 @@ function ChatPanel({ userId, apiKey, onClose }) {
         }
       }
 
+      // Si no hay sesión, mostrar indicador de carga inicial inmediatamente
+      setMessages([{ role: 'bot', content: '', loading: true }])
       setIsLoading(true)
+
       try {
         const response = await fetch('/api/chatbot', {
           method: 'POST',
@@ -227,7 +249,11 @@ function ChatPanel({ userId, apiKey, onClose }) {
         const data = await response.json()
         
         if (data.reply) {
+          // Reemplazar el loading con el saludo real
           setMessages([{ role: 'bot', content: '', typing: true, fullContent: data.reply }])
+        } else if (data.history && data.history.length > 0) {
+          // Si devuelve historial, cargarlo
+          setMessages(data.history.map(m => ({ ...m, typing: false })));
         }
       } catch (error) {
         setMessages([{ role: 'bot', content: '¡Hola! Soy OVNI. ¿En qué puedo ayudarte?', typing: false }])

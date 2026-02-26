@@ -7,12 +7,12 @@ export default function DemoGenerator() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [isTypingInitial, setIsTypingInitial] = useState(false) // Nuevo estado
+  const [isTypingInitial, setIsTypingInitial] = useState(false)
   const [previewData, setPreviewData] = useState(null)
   const [currentStep, setCurrentStep] = useState('chat') // chat | generating | preview
   const [isMobile, setIsMobile] = useState(false)
   const chatMessagesRef = useRef(null)
-  const hasFetchedInitial = useRef(false) // Control para que initDesigner se ejecute solo una vez al cargar
+  const hasFetchedInitial = useRef(false)
 
   const scrollToBottom = () => {
     if (chatMessagesRef.current) {
@@ -21,7 +21,6 @@ export default function DemoGenerator() {
   }
 
   useEffect(() => {
-    // Detectar si es mobile
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
     window.addEventListener('resize', checkMobile)
@@ -29,423 +28,262 @@ export default function DemoGenerator() {
   }, [])
 
   useEffect(() => {
-    // Pequeño delay para asegurar que el mensaje se renderizó antes del scroll
     setTimeout(scrollToBottom, 50)
-  }, [messages])
+  }, [messages, isLoading])
 
-  // Carga inicial de la previewData y el historial del chat
+  // Lógica de Typewriter para el Diseñador
   useEffect(() => {
-    if (hasFetchedInitial.current) return; // Asegurar que solo se ejecute una vez
+    const lastMsg = messages[messages.length - 1]
+    if (lastMsg && lastMsg.role === 'bot' && lastMsg.typing && lastMsg.fullContent) {
+      let i = 0
+      const timer = setInterval(() => {
+        if (i <= lastMsg.fullContent.length) {
+          setMessages(prev => {
+            const newMsgs = [...prev]
+            const index = newMsgs.length - 1
+            if (newMsgs[index]) {
+              newMsgs[index] = {
+                ...newMsgs[index],
+                content: lastMsg.fullContent.slice(0, i)
+              }
+            }
+            return newMsgs
+          })
+          i++
+        } else {
+          clearInterval(timer)
+          setMessages(prev => {
+            const newMsgs = [...prev]
+            const index = newMsgs.length - 1
+            if (newMsgs[index]) {
+              newMsgs[index] = { ...newMsgs[index], typing: false }
+            }
+            return newMsgs
+          })
+        }
+      }, 15)
+      return () => clearInterval(timer)
+    }
+  }, [messages.length, messages[messages.length - 1]?.typing])
+
+  // Carga inicial y recuperación
+  useEffect(() => {
+    if (hasFetchedInitial.current) return
     
     const initDesigner = async () => {
-      hasFetchedInitial.current = true; // Marcar como inicializado
-      setIsLoading(true);
-      const userId = localStorage.getItem('ovni_user_id') || 'temp_user';
+      hasFetchedInitial.current = true
+      setIsLoading(true)
+      const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
 
-      // 1. Intentar recuperar previewData de localStorage primero
-      const savedPreview = localStorage.getItem(`ovni_demo_preview_${userId}`);
+      const savedPreview = localStorage.getItem(`ovni_demo_preview_${userId}`)
       if (savedPreview) {
-        setPreviewData(JSON.parse(savedPreview));
-        setCurrentStep('preview');
-        setIsLoading(false);
-        // Si hay preview, aún así cargamos el historial para mantener la conversación si vuelven al chat
-        const response = await fetch('/api/chatbot', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, clientId: 'site-designer', message: '' })
-        });
-        const data = await response.json();
-        if (data.history && data.history.length > 0) {
-          setMessages(data.history.map(m => ({ role: m.role, content: m.content, typing: false })));
-        }
-        return;
+        setPreviewData(JSON.parse(savedPreview))
+        setCurrentStep('preview')
+        setIsLoading(false)
+        return
       }
 
-      // 2. Si no hay preview, mostrar indicador de carga inicial y luego intentar recuperar historial/saludo
-      setMessages([{ role: 'bot', content: '', loading: true }]);
-      setIsTypingInitial(true); // Activar el indicador inicial
+      setMessages([{ role: 'bot', content: '', loading: true }])
+      setIsTypingInitial(true)
 
       try {
         const response = await fetch('/api/chatbot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            userId, 
-            clientId: 'site-designer', 
-            message: '' // Petición de saludo/historial
-          })
-        });
-        const data = await response.json();
+          body: JSON.stringify({ userId, clientId: 'site-designer', message: '' })
+        })
+        const data = await response.json()
         
         if (data.history && data.history.length > 0) {
-          // Si el backend devuelve historial, lo cargamos reemplazando el loading
-          setMessages(prev => {
-            const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
-            return [...newMsgs, ...data.history.map(m => ({ role: m.role, content: m.content, typing: false }))];
-          });
+          setMessages(data.history.map(m => ({ role: m.role, content: m.content, typing: false })))
         } else if (data.reply) {
-          // Si no hay historial, es usuario nuevo, usar el saludo devuelto por la API
-          setMessages(prev => {
-            const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
-            return [...newMsgs, { role: 'bot', content: '', fullContent: data.reply, typing: true }];
-          });
-        } else {
-          // Fallback si no hay ni historial ni reply
-          setMessages(prev => {
-            const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
-            return [...newMsgs, { role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }];
-          });
+          setMessages([{ role: 'bot', content: '', fullContent: data.reply, typing: true }])
         }
       } catch (e) {
-        console.error("Error en initDesigner:", e);
-        setMessages(prev => {
-          const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
-          return [...newMsgs, { role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }];
-        });
+        setMessages([{ role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?', typing: false }])
       } finally {
-        setIsLoading(false);
-        setIsTypingInitial(false); // Desactivar indicador inicial
+        setIsLoading(false)
+        setIsTypingInitial(false)
       }
-    };
+    }
     
-    initDesigner();
-  }, []);
+    initDesigner()
+  }, [])
 
-  // Guardar preview en localStorage cuando cambia
+  // Guardar previewData
   useEffect(() => {
     if (typeof window !== 'undefined' && previewData) {
-      const userId = localStorage.getItem('ovni_user_id') || 'temp_user';
-      localStorage.setItem(`ovni_demo_preview_${userId}`, JSON.stringify(previewData));
+      const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
+      localStorage.setItem(`ovni_demo_preview_${userId}`, JSON.stringify(previewData))
     }
-  }, [previewData]);
+  }, [previewData])
 
   const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    e.preventDefault()
+    if (!input.trim() || isLoading) return
 
-    const userMessage = input.trim();
-    setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-    setMessages(prev => [...prev, { role: 'bot', content: '', loading: true }]); // Mostrar indicador de carga
-    setIsLoading(true);
+    const userMessage = input.trim()
+    setInput('')
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
+    setMessages(prev => [...prev, { role: 'bot', content: '', loading: true }])
+    setIsLoading(true)
 
     try {
-      const userId = localStorage.getItem('ovni_user_id') || 'temp_user';
+      const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
       const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          clientId: 'site-designer',
-          message: userMessage
-        })
-      });
+        body: JSON.stringify({ userId, clientId: 'site-designer', message: userMessage })
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (data.reply) {
-        // Reemplazar el mensaje de carga con la respuesta real
         setMessages(prev => {
-          const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
-          return [...newMsgs, { 
-            role: 'bot', 
-            content: '', 
-            fullContent: data.reply, 
-            typing: true,
-            accion: data.accion,
-            target: data.target
-          }];
-        });
+          const newMsgs = prev.filter(msg => !msg.loading)
+          return [...newMsgs, { role: 'bot', content: '', fullContent: data.reply, typing: true, accion: data.accion, target: data.target }]
+        })
 
         if (data.accion === 'GENERATE_SITE' && data.target) {
-          const config = JSON.parse(data.target);
-          setPreviewData(config);
-          setCurrentStep('generating');
-          setTimeout(() => setCurrentStep('preview'), 3000);
+          const config = JSON.parse(data.target)
+          setPreviewData(config)
+          setCurrentStep('generating')
+          setTimeout(() => setCurrentStep('preview'), 3000)
         }
-      } else if (data.history && data.history.length > 0) {
-         // Si no hay reply, pero hay historial, lo mostramos para mantener la conversación
-         setMessages(prev => {
-          const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
-          return [...newMsgs, ...data.history.map(m => ({ ...m, typing: false }))];
-        });
-      } else {
-        setMessages(prev => {
-          const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
-          return [...newMsgs, { role: 'bot', content: 'Disculpa, tuve un problema. Intenta de nuevo.', typing: false }];
-        });
       }
     } catch (error) {
-      console.error('Error:', error);
-      setMessages(prev => {
-        const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
-        return [...newMsgs, { role: 'bot', content: 'Error de conexión.', typing: false }];
-      });
+      console.error('Error:', error)
+      setMessages(prev => prev.filter(m => !m.loading))
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleReset = async () => {
-    const userId = localStorage.getItem('ovni_user_id') || 'temp_user';
-    setCurrentStep('chat');
-    setPreviewData(null);
-    setMessages([]);
-    setInput('');
-    localStorage.removeItem(`ovni_demo_preview_${userId}`);
-    sessionStorage.removeItem('ovni_demo_session'); // Limpiar también la sesión del chat
-    hasFetchedInitial.current = false; // Permitir que se vuelva a inicializar
+    const userId = localStorage.getItem('ovni_user_id') || 'temp_user'
+    setCurrentStep('chat')
+    setPreviewData(null)
+    setMessages([{ role: 'bot', content: '', loading: true }])
+    setInput('')
+    localStorage.removeItem(`ovni_demo_preview_${userId}`)
+    hasFetchedInitial.current = true
 
-    setIsLoading(true);
     try {
       const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          clientId: 'site-designer',
-          message: '',
-          clearHistory: true
-        })
-      });
-      const data = await response.json();
+        body: JSON.stringify({ userId, clientId: 'site-designer', message: '', clearHistory: true })
+      })
+      const data = await response.json()
       if (data.reply) {
-        setMessages([{ role: 'bot', content: data.reply }]);
-      } else if (data.history && data.history.length > 0) {
-        // Si el backend devuelve historial después de limpiar (no debería, pero por si acaso)
-        setMessages(data.history.map(m => ({ role: m.role, content: m.content })));
-      } else {
-        setMessages([{ role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }]);
+        setMessages([{ role: 'bot', content: '', fullContent: data.reply, typing: true }])
       }
     } catch (e) {
-      console.error("Error en handleReset:", e);
-      setMessages([{ role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }]);
-    } finally {
-      setIsLoading(false);
+      setMessages([{ role: 'bot', content: '¡Hola! Empecemos de nuevo. ¿Qué nombre tiene tu negocio?', typing: false }])
     }
-  };
+  }
 
   return (
-    <div id="demo" style={{
-      ...styles.container,
-      padding: isMobile ? '40px 20px' : '80px 40px',
-    }}>
+    <div id="demo" style={{ ...styles.container, padding: isMobile ? '40px 20px' : '80px 40px' }}>
       <div style={styles.header}>
-        <h2 style={{
-          ...styles.title,
-          fontSize: isMobile ? '2rem' : '3rem',
-        }}>Experimentá la Generación con IA</h2>
-        <p style={{
-          ...styles.subtitle,
-          fontSize: isMobile ? '1rem' : '1.2rem',
-        }}>Hablá con nuestro agente diseñador y mirá cómo cobra vida tu sitio en tiempo real.</p>
+        <h2 style={{ ...styles.title, fontSize: isMobile ? '2rem' : '3rem' }}>Experimentá la Generación con IA</h2>
+        <p style={{ ...styles.subtitle, fontSize: isMobile ? '1rem' : '1.2rem' }}>Hablá con nuestro agente diseñador y mirá cómo cobra vida tu sitio en tiempo real.</p>
       </div>
 
-      <div style={{
-        ...styles.workspace,
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 1.5fr',
-        height: isMobile ? 'auto' : '600px',
-        maxHeight: isMobile ? '800px' : '600px',
-      }}>
-        {/* Panel de Chat Izquierdo */}
+      <div style={{ ...styles.workspace, gridTemplateColumns: isMobile ? '1fr' : '1fr 1.5fr', height: isMobile ? 'auto' : '600px' }}>
         {(!isMobile || currentStep === 'chat') && (
-          <div style={{
-            ...styles.chatPanel,
-            borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)',
-            paddingRight: isMobile ? '0' : '20px',
-            height: isMobile ? '500px' : '100%',
-          }}>
+          <div style={{ ...styles.chatPanel, borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', paddingRight: isMobile ? '0' : '20px', height: isMobile ? '500px' : '100%' }}>
             <div style={styles.chatMessages} ref={chatMessagesRef}>
               {messages.map((msg, i) => (
                 <div key={i} style={{
-                  ...styles.message,
-                  alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  backgroundColor: msg.role === 'user' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                  border: msg.role === 'user' ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                  ...styles.messageWrapper,
+                  justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
                 }}>
-                  {msg.loading || (msg.typing && msg.fullContent === '') ? (
-                    <span style={styles.typingDots}>
-                      <span style={{...styles.dot, animationDelay: '0s'}} />
-                      <span style={{...styles.dot, animationDelay: '0.2s'}} />
-                      <span style={{...styles.dot, animationDelay: '0.4s'}} />
-                    </span>
-                  ) : (
-                    msg.content
-                  )}
-                </div>
-              ))}
-              {isTypingInitial && messages.length === 0 && (
-                <div style={styles.messageWrapper}>
-                  <div style={styles.botAvatar}></div> {/* Avatar vacío, si es necesario */}
-                  <div style={{...styles.message, backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)'}}>
-                    <span style={styles.typingDots}>
-                      <span style={{...styles.dot, animationDelay: '0s'}} />
-                      <span style={{...styles.dot, animationDelay: '0.2s'}} />
-                      <span style={{...styles.dot, animationDelay: '0.4s'}} />
-                    </span>
+                  <div style={{
+                    ...styles.message,
+                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    backgroundColor: msg.role === 'user' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                    border: msg.role === 'user' ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                    color: msg.role === 'user' ? '#fff' : '#ccc',
+                  }}>
+                    {msg.loading || (msg.typing && msg.content === '') ? (
+                      <span style={styles.typingDots}>
+                        <span style={{ ...styles.dot, animationDelay: '0s' }} />
+                        <span style={{ ...styles.dot, animationDelay: '0.2s' }} />
+                        <span style={{ ...styles.dot, animationDelay: '0.4s' }} />
+                      </span>
+                    ) : (
+                      msg.content
+                    )}
                   </div>
                 </div>
-              )}
+              ))}
             </div>
-            
             <form onSubmit={handleSendMessage} style={styles.inputArea}>
-              <input 
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Escribí aquí..."
-                style={styles.input}
-                disabled={isLoading || currentStep !== 'chat'}
-              />
-              <button type="submit" style={styles.sendBtn} disabled={isLoading || currentStep !== 'chat'}>
-                Enviar
-              </button>
+              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Escribí aquí..." style={styles.input} disabled={isLoading || currentStep !== 'chat'} />
+              <button type="submit" style={styles.sendBtn} disabled={isLoading || currentStep !== 'chat'}>Enviar</button>
             </form>
           </div>
         )}
 
-        {/* Panel de Preview Derecho */}
         {(!isMobile || currentStep !== 'chat') && (
-          <div style={{
-            ...styles.previewPanel,
-            height: isMobile ? '500px' : '100%',
-          }}>
-          {currentStep === 'chat' && (
-            <div style={styles.placeholder}>
-              <div style={styles.placeholderIcon}>✨</div>
-              <p>Aquí aparecerá la previsualización de tu sitio mientras conversamos.</p>
-            </div>
-          )}
-
-          {currentStep === 'generating' && (
-            <div style={styles.generating}>
-              <div className="spinner"></div>
-              <h3>Generando arquitectura...</h3>
-              <p>Inyectando datos de {previewData?.nombre} en la plantilla {previewData?.tipo}</p>
-            </div>
-          )}
-
-          {currentStep === 'preview' && previewData && (
-            <div style={styles.previewContent}>
-              <div style={styles.browserHeader}>
-                <div style={styles.browserDots}><span/><span/><span/></div>
-                <div style={styles.browserUrl}>Previsualización del sitio</div>
+          <div style={{ ...styles.previewPanel, height: isMobile ? '500px' : '100%' }}>
+            {currentStep === 'chat' && (
+              <div style={styles.placeholder}>
+                <div style={styles.placeholderIcon}>✨</div>
+                <p>Aquí aparecerá la previsualización de tu sitio mientras conversamos.</p>
               </div>
-              <iframe 
-                style={styles.iframe}
-                srcDoc={getTemplateHtml(previewData.tipo, previewData)}
-              />
-              <div style={styles.previewActions}>
-                <button onClick={handleReset} style={styles.resetBtn}>
-                  Reiniciar Diseño
-                </button>
-                <button 
-                  onClick={() => {
-                    const slug = previewData.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-                    const p = previewData.colores?.primary?.replace('#', '') || '6366f1';
-                    const s = previewData.colores?.secondary?.replace('#', '') || '0ea5e0'; // Corregido a un hex válido
-                    const desc = encodeURIComponent(previewData.descripcion || '');
-                    
-                    const targetUrl = `/site-preview/${slug}?tipo=${previewData.tipo || 'landing'}&p=${p}&s=${s}&desc=${desc}`;
-                    
-                    window.open(targetUrl, '_blank');
-                  }} 
-                  style={styles.confirmBtn}
-                >
-                  Generar Emulación 🚀
-                </button>
+            )}
+            {currentStep === 'generating' && (
+              <div style={styles.generating}>
+                <div className="spinner"></div>
+                <h3>Generando arquitectura...</h3>
+                <p>Inyectando datos de {previewData?.nombre}</p>
               </div>
-            </div>
-          )}
-        </div>
-        )}
+            )}
+            {currentStep === 'preview' && previewData && (
+              <div style={styles.previewContent}>
+                <div style={styles.browserHeader}>
+                  <div style={styles.browserDots}><span/><span/><span/></div>
+                  <div style={styles.browserUrl}>Previsualización en vivo</div>
+                </div>
+                <iframe style={styles.iframe} srcDoc={getTemplateHtml(previewData.tipo, previewData)} />
+                <div style={styles.previewActions}>
+                  <button onClick={handleReset} style={styles.resetBtn}>Reiniciar Diseño</button>
+                  <button onClick={() => window.open(`/site-preview/${previewData.nombre.toLowerCase().replace(/\s/g, '-')}`, '_blank')} style={styles.confirmBtn}>Generar Emulación 🚀</button>
+                </div>
+              </div>
+            )}
           </div>
+        )}
+      </div>
 
       <style jsx>{`
-        .spinner {
-          width: 40px;
-          height: 40px;
-          border: 4px solid rgba(255,255,255,0.1);
-          border-left-color: #6366f1;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin-bottom: 20px;
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes bounce {
-          0%, 80%, 100% { transform: scale(0); opacity: 0; }
-          40% { transform: scale(1.0); opacity: 1; }
-        }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-left-color: #6366f1; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
       `}</style>
     </div>
-  );
+  )
 }
 
 const styles = {
-  container: {
-    padding: '80px 40px',
-    maxWidth: '1200px',
-    margin: '0 auto',
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '40px',
-  },
+  container: { maxWidth: '1200px', margin: '0 auto', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: '40px' },
   header: { textAlign: 'center' },
-  title: { fontSize: '3rem', fontWeight: 'bold', marginBottom: '16px', background: 'linear-gradient(to right, #fff, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
-  subtitle: { fontSize: '1.2rem', color: 'rgba(255,255,255,0.6)', maxWidth: '700px', margin: '0 auto' },
-  workspace: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1.5fr',
-    gap: '30px',
-    height: '600px',
-    maxHeight: '600px',
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    borderRadius: '24px',
-    border: '1px solid rgba(255,255,255,0.05)',
-    padding: '20px',
-    backdropFilter: 'blur(20px)',
-    overflow: 'hidden',
-  },
-  chatPanel: { 
-    display: 'flex', 
-    flexDirection: 'column', 
-    height: '100%',
-    overflow: 'hidden',
-    gap: '20px', 
-    borderRight: '1px solid rgba(255,255,255,0.05)', 
-    paddingRight: '20px' 
-  },
-  chatMessages: { 
-    flex: 1, 
-    overflowY: 'auto', 
-    display: 'flex', 
-    flexDirection: 'column', 
-    gap: '12px', 
-    padding: '10px',
-    scrollbarWidth: 'none', // Ocultar scrollbar en Firefox
-  },
+  title: { fontWeight: 'bold', marginBottom: '16px', background: 'linear-gradient(to right, #fff, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
+  subtitle: { color: 'rgba(255,255,255,0.6)', maxWidth: '700px', margin: '0 auto' },
+  workspace: { display: 'grid', gap: '30px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', backdropFilter: 'blur(20px)', overflow: 'hidden' },
+  chatPanel: { display: 'flex', flexDirection: 'column', gap: '20px' },
+  chatMessages: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', padding: '10px' },
+  messageWrapper: { display: 'flex', width: '100%' },
   message: { padding: '12px 16px', borderRadius: '16px', maxWidth: '85%', fontSize: '0.95rem', lineHeight: 1.4 },
-  loading: { fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' },
-  typingDots: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '4px',
-    height: '1em',
-  },
-  dot: {
-    width: '6px',
-    height: '6px',
-    borderRadius: '50%',
-    backgroundColor: '#9ca3af',
-    animation: 'bounce 1.4s infinite ease-in-out both',
-  },
+  typingDots: { display: 'inline-flex', alignItems: 'center', gap: '4px', height: '1.2rem' },
+  dot: { width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#6366f1', animation: 'bounce 1.4s infinite ease-in-out both' },
   inputArea: { display: 'flex', gap: '10px' },
   input: { flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px', color: '#fff', outline: 'none' },
   sendBtn: { backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '12px', padding: '0 20px', cursor: 'pointer', fontWeight: 'bold' },
   previewPanel: { position: 'relative', overflow: 'hidden', borderRadius: '16px', backgroundColor: 'rgba(0,0,0,0.2)' },
-  placeholder: { height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', gap: '10px', textAlign: 'center', padding: '40px' },
+  placeholder: { height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', gap: '10px', textAlign: 'center' },
   placeholderIcon: { fontSize: '3rem' },
   generating: { height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' },
   previewContent: { height: '100%', display: 'flex', flexDirection: 'column' },
@@ -454,6 +292,6 @@ const styles = {
   browserUrl: { flex: 1, backgroundColor: '#1a1a1a', borderRadius: '4px', padding: '4px 12px', fontSize: '0.8rem', color: '#888' },
   iframe: { flex: 1, border: 'none', backgroundColor: '#fff' },
   previewActions: { display: 'flex', gap: '10px', position: 'absolute', bottom: '20px', right: '20px' },
-  resetBtn: { padding: '8px 16px', backgroundColor: 'rgba(0,0,0,0.6)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '500', backdropFilter: 'blur(5px)' },
-  confirmBtn: { padding: '8px 16px', backgroundColor: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '500', backdropFilter: 'blur(5px)' }
+  resetBtn: { padding: '8px 16px', backgroundColor: 'rgba(0,0,0,0.6)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', cursor: 'pointer' },
+  confirmBtn: { padding: '8px 16px', backgroundColor: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', cursor: 'pointer' }
 }
