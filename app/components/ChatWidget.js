@@ -8,7 +8,6 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [isTypingInitial, setIsTypingInitial] = useState(false) // Nuevo estado para el primer mensaje
   const [viewportHeight, setViewportHeight] = useState('85px')
   const [chatMaxHeight, setChatMaxHeight] = useState('520px')
   const [userId, setUserId] = useState(null)
@@ -84,13 +83,16 @@ export default function ChatWidget() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
       }, 100)
     }
-  }, [isChatOpen, messages, isLoading, isTypingInitial]) // Dependencia de isTypingInitial
+  }, [isChatOpen, messages, isLoading])
 
   // Cargar saludo inicial (SOLO UNA VEZ)
   useEffect(() => {
     if (isChatOpen && messages.length === 0 && userId && !hasFetchedInitial.current) {
       hasFetchedInitial.current = true;
-      setIsTypingInitial(true); // Mostrar puntos inmediatamente
+      // Mostrar indicador de carga inmediatamente
+      setMessages(prev => [...prev, { role: 'bot', content: '', loading: true }]);
+      setIsLoading(true);
+
       const fetchInitial = async () => {
         try {
           const response = await fetch('/api/chatbot', {
@@ -100,16 +102,24 @@ export default function ChatWidget() {
           })
           const data = await response.json()
           if (data.reply) {
-            setMessages([{ role: 'bot', content: '', fullContent: data.reply, typing: true }])
+            setMessages(prev => {
+              const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
+              return [...newMsgs, { role: 'bot', content: '', fullContent: data.reply, typing: true }];
+            });
           } else if (data.history && data.history.length > 0) {
-            // Si no hay reply directo, pero hay historial, lo mostramos (sin typing effect para historial viejo)
-            setMessages(data.history.map(m => ({ ...m, typing: false })));
+            setMessages(prev => {
+              const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
+              return [...newMsgs, ...data.history.map(m => ({ ...m, typing: false }))];
+            });
           }
         } catch (e) {
           console.error('Error fetching initial greeting:', e)
-          setMessages([{ role: 'bot', content: '¡Hola! Soy tu asistente de OVNI Studio. ¿En qué puedo ayudarte?', typing: false }])
+          setMessages(prev => {
+            const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
+            return [...newMsgs, { role: 'bot', content: '¡Hola! Soy tu asistente de OVNI Studio. ¿En qué puedo ayudarte?', typing: false }];
+          });
         } finally {
-          setIsTypingInitial(false); // Ocultar puntos al terminar
+          setIsLoading(false);
         }
       }
       fetchInitial()
@@ -155,8 +165,7 @@ export default function ChatWidget() {
     const userMessage = input.trim()
     setInput('')
     setMessages(prev => [...prev, { role: 'user', content: userMessage, typing: false }])
-    // Mostrar indicador de carga inmediatamente
-    setMessages(prev => [...prev, { role: 'bot', content: '', loading: true }])
+    setMessages(prev => [...prev, { role: 'bot', content: '', loading: true }]) // Mostrar indicador de carga
     setIsLoading(true)
 
     try {
@@ -169,7 +178,6 @@ export default function ChatWidget() {
       const data = await response.json()
       
       if (data.reply) {
-        // Reemplazar el mensaje de carga con la respuesta real
         setMessages(prev => {
           const newMsgs = prev.filter(msg => !msg.loading) // Eliminar el mensaje de carga
           return [...newMsgs, { 
@@ -192,21 +200,20 @@ export default function ChatWidget() {
           }
         }
       } else if (data.history && data.history.length > 0) {
-        // Si no hay reply directo, pero hay historial, lo mostramos
         setMessages(prev => {
           const newMsgs = prev.filter(msg => !msg.loading);
           return [...newMsgs, ...data.history.map(m => ({ ...m, typing: false }))];
         });
       } else {
         setMessages(prev => {
-          const newMsgs = prev.filter(msg => !msg.loading) // Eliminar el mensaje de carga
+          const newMsgs = prev.filter(msg => !msg.loading)
           return [...newMsgs, { role: 'bot', content: 'Disculpa, tuve un problema. Intenta de nuevo.', typing: false }]
         })
       }
     } catch (error) {
       console.error('Error:', error)
       setMessages(prev => {
-        const newMsgs = prev.filter(msg => !msg.loading) // Eliminar el mensaje de carga
+        const newMsgs = prev.filter(msg => !msg.loading)
         return [...newMsgs, { role: 'bot', content: 'Error de conexión.', typing: false }]
       })
     } finally {
@@ -300,7 +307,7 @@ export default function ChatWidget() {
                 </div>
               </div>
             ))}
-            {isTypingInitial && messages.length === 0 && (
+            {isLoading && !messages.some(msg => msg.loading) && !messages.some(msg => msg.typing) && (
                <div style={styles.messageWrapper}>
                 <div style={styles.botAvatar}><svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 7L12 12L22 7L12 2Z"/></svg></div>
                 <div style={{...styles.message, backgroundColor: 'rgba(30, 30, 50, 0.6)', border: '1px solid rgba(255, 255, 255, 0.05)'}}>
@@ -332,6 +339,44 @@ export default function ChatWidget() {
         </div>
       )}
 
+      {/* Overlay de Previsualización */}
+      {showPreview && previewData && (
+        <div style={styles.previewOverlay}>
+          <div style={styles.previewCard}>
+            <div style={styles.previewHeader}>
+              <h3 style={{ margin: 0, fontSize: '16px' }}>Previsualización: {previewData.nombre}</h3>
+              <button onClick={() => setShowPreview(false)} style={styles.closeBtn}>✕</button>
+            </div>
+            <div style={styles.previewContent}>
+              <div style={{ ...styles.previewSite, backgroundColor: '#f9fafb' }}>
+                <header style={{ backgroundColor: previewData.colores?.primary || '#6366f1', color: 'white', padding: '10px', textAlign: 'center', fontSize: '12px' }}>
+                  <strong>{previewData.nombre}</strong>
+                </header>
+                <div style={{ padding: '20px', textAlign: 'center' }}>
+                  <h2 style={{ color: '#111827', fontSize: '18px', marginBottom: '8px' }}>{previewData.nombre}</h2>
+                  <p style={{ color: '#4b5563', fontSize: '13px' }}>{previewData.descripcion || 'Bienvenido a nuestro nuevo sitio web.'}</p>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '12px' }}>
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: previewData.colores?.primary }}></div>
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: previewData.colores?.secondary || '#eee' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style={styles.previewFooter}>
+              <button 
+                onClick={() => {
+                  alert('¡Solicitud de generación enviada! Este proceso creará tu sitio real en Vercel.');
+                  setShowPreview(false);
+                }} 
+                style={styles.confirmBtn}
+              >
+                Confirmar y Generar Sitio
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <style jsx>{`
         .ovni-fab { animation: float 3s ease-in-out infinite; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }

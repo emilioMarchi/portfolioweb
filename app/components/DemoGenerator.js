@@ -7,6 +7,7 @@ export default function DemoGenerator() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isTypingInitial, setIsTypingInitial] = useState(false) // Nuevo estado
   const [previewData, setPreviewData] = useState(null)
   const [currentStep, setCurrentStep] = useState('chat') // chat | generating | preview
   const [isMobile, setIsMobile] = useState(false)
@@ -55,12 +56,15 @@ export default function DemoGenerator() {
         });
         const data = await response.json();
         if (data.history && data.history.length > 0) {
-          setMessages(data.history.map(m => ({ role: m.role, content: m.content })));
+          setMessages(data.history.map(m => ({ role: m.role, content: m.content, typing: false })));
         }
         return;
       }
 
-      // 2. Si no hay preview, intentar recuperar historial del chat desde el backend
+      // 2. Si no hay preview, mostrar indicador de carga inicial y luego intentar recuperar historial/saludo
+      setMessages([{ role: 'bot', content: '', loading: true }]);
+      setIsTypingInitial(true); // Activar el indicador inicial
+
       try {
         const response = await fetch('/api/chatbot', {
           method: 'POST',
@@ -74,16 +78,33 @@ export default function DemoGenerator() {
         const data = await response.json();
         
         if (data.history && data.history.length > 0) {
-          setMessages(data.history.map(m => ({ role: m.role, content: m.content })));
+          // Si el backend devuelve historial, lo cargamos reemplazando el loading
+          setMessages(prev => {
+            const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
+            return [...newMsgs, ...data.history.map(m => ({ role: m.role, content: m.content, typing: false }))];
+          });
         } else if (data.reply) {
-          // 3. Si no hay historial, es usuario nuevo o limpio, usar el saludo devuelto por la API
-          setMessages([{ role: 'bot', content: data.reply }]);
+          // Si no hay historial, es usuario nuevo, usar el saludo devuelto por la API
+          setMessages(prev => {
+            const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
+            return [...newMsgs, { role: 'bot', content: '', fullContent: data.reply, typing: true }];
+          });
+        } else {
+          // Fallback si no hay ni historial ni reply
+          setMessages(prev => {
+            const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
+            return [...newMsgs, { role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }];
+          });
         }
       } catch (e) {
         console.error("Error en initDesigner:", e);
-        setMessages([{ role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }]);
+        setMessages(prev => {
+          const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
+          return [...newMsgs, { role: 'bot', content: '¡Hola! Soy tu diseñador experto. ¿Qué nombre tiene tu negocio?' }];
+        });
       } finally {
         setIsLoading(false);
+        setIsTypingInitial(false); // Desactivar indicador inicial
       }
     };
     
@@ -105,6 +126,7 @@ export default function DemoGenerator() {
     const userMessage = input.trim();
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setMessages(prev => [...prev, { role: 'bot', content: '', loading: true }]); // Mostrar indicador de carga
     setIsLoading(true);
 
     try {
@@ -122,7 +144,18 @@ export default function DemoGenerator() {
       const data = await response.json();
 
       if (data.reply) {
-        setMessages(prev => [...prev, { role: 'bot', content: data.reply }]);
+        // Reemplazar el mensaje de carga con la respuesta real
+        setMessages(prev => {
+          const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
+          return [...newMsgs, { 
+            role: 'bot', 
+            content: '', 
+            fullContent: data.reply, 
+            typing: true,
+            accion: data.accion,
+            target: data.target
+          }];
+        });
 
         if (data.accion === 'GENERATE_SITE' && data.target) {
           const config = JSON.parse(data.target);
@@ -132,10 +165,22 @@ export default function DemoGenerator() {
         }
       } else if (data.history && data.history.length > 0) {
          // Si no hay reply, pero hay historial, lo mostramos para mantener la conversación
-         setMessages(data.history.map(m => ({ role: m.role, content: m.content })));
+         setMessages(prev => {
+          const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
+          return [...newMsgs, ...data.history.map(m => ({ ...m, typing: false }))];
+        });
+      } else {
+        setMessages(prev => {
+          const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
+          return [...newMsgs, { role: 'bot', content: 'Disculpa, tuve un problema. Intenta de nuevo.', typing: false }];
+        });
       }
     } catch (error) {
       console.error('Error:', error);
+      setMessages(prev => {
+        const newMsgs = prev.filter(msg => !msg.loading); // Eliminar el mensaje de carga
+        return [...newMsgs, { role: 'bot', content: 'Error de conexión.', typing: false }];
+      });
     } finally {
       setIsLoading(false);
     }
@@ -218,10 +263,29 @@ export default function DemoGenerator() {
                   backgroundColor: msg.role === 'user' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                   border: msg.role === 'user' ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
                 }}>
-                  {msg.content}
+                  {msg.loading || (msg.typing && msg.fullContent === '') ? (
+                    <span style={styles.typingDots}>
+                      <span style={{...styles.dot, animationDelay: '0s'}} />
+                      <span style={{...styles.dot, animationDelay: '0.2s'}} />
+                      <span style={{...styles.dot, animationDelay: '0.4s'}} />
+                    </span>
+                  ) : (
+                    msg.content
+                  )}
                 </div>
               ))}
-              {isLoading && <div style={styles.loading}>Diseñador pensando...</div>}
+              {isTypingInitial && messages.length === 0 && (
+                <div style={styles.messageWrapper}>
+                  <div style={styles.botAvatar}></div> {/* Avatar vacío, si es necesario */}
+                  <div style={{...styles.message, backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)'}}>
+                    <span style={styles.typingDots}>
+                      <span style={{...styles.dot, animationDelay: '0s'}} />
+                      <span style={{...styles.dot, animationDelay: '0.2s'}} />
+                      <span style={{...styles.dot, animationDelay: '0.4s'}} />
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
             
             <form onSubmit={handleSendMessage} style={styles.inputArea}>
@@ -294,7 +358,7 @@ export default function DemoGenerator() {
           )}
         </div>
         )}
-      </div>
+          </div>
 
       <style jsx>{`
         .spinner {
@@ -308,6 +372,10 @@ export default function DemoGenerator() {
         }
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        @keyframes bounce {
+          0%, 80%, 100% { transform: scale(0); opacity: 0; }
+          40% { transform: scale(1.0); opacity: 1; }
         }
       `}</style>
     </div>
@@ -360,6 +428,19 @@ const styles = {
   },
   message: { padding: '12px 16px', borderRadius: '16px', maxWidth: '85%', fontSize: '0.95rem', lineHeight: 1.4 },
   loading: { fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' },
+  typingDots: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    height: '1em',
+  },
+  dot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    backgroundColor: '#9ca3af',
+    animation: 'bounce 1.4s infinite ease-in-out both',
+  },
   inputArea: { display: 'flex', gap: '10px' },
   input: { flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px', color: '#fff', outline: 'none' },
   sendBtn: { backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '12px', padding: '0 20px', cursor: 'pointer', fontWeight: 'bold' },
