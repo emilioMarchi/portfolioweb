@@ -4,6 +4,12 @@ import { useState, useEffect } from 'react'
 
 export default function Contacto() {
   const [isMobile, setIsMobile] = useState(false)
+  const [nombre, setNombre] = useState('')
+  const [email, setEmail] = useState('')
+  const [mensaje, setMensaje] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [isError, setIsError] = useState(false)
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -11,6 +17,37 @@ export default function Contacto() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setIsSuccess(false)
+    setIsError(false)
+
+    try {
+      const response = await fetch('/api/contact-submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nombre, email, mensaje }),
+      })
+
+      if (response.ok) {
+        setIsSuccess(true)
+        setNombre('')
+        setEmail('')
+        setMensaje('')
+      } else {
+        setIsError(true)
+      }
+    } catch (error) {
+      console.error('Error al enviar formulario:', error)
+      setIsError(true)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <section id="contacto" style={styles.section}>
@@ -43,10 +80,22 @@ export default function Contacto() {
               </div>
               <div style={styles.infoContent}>
                 <span style={styles.infoLabel}>Email</span>
-                <a href="mailto:hola@ovnistudio.com" style={styles.infoValue}>hola@ovnistudio.com</a>
+                <a href="mailto:emiliomarchi.dev@gmail.com" style={styles.infoValue}>emiliomarchi.dev@gmail.com</a>
               </div>
             </div>
             
+            <div style={styles.infoCard}>
+              <div style={styles.infoIcon}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-3.67-2.94L3 13.5V10.5h4c.7 0 1.25-.56 1.25-1.25s-.55-1.25-1.25-1.25H3V5.5c0-.83.67-1.5 1.5-1.5h1.4c1 0 1.9.4 2.6.9L12 9l4.5-4.5c.7-.5 1.6-.9 2.6-.9H20.5c.83 0 1.5.67 1.5 1.5V16.92z"/>
+                </svg>
+              </div>
+              <div style={styles.infoContent}>
+                <span style={styles.infoLabel}>Teléfono</span>
+                <a href="tel:+543425161099" style={styles.infoValue}>+54 342 5161099</a>
+              </div>
+            </div>
+
             <div style={styles.infoCard}>
               <div style={styles.infoIcon}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -56,7 +105,7 @@ export default function Contacto() {
               </div>
               <div style={styles.infoContent}>
                 <span style={styles.infoLabel}>Ubicación</span>
-                <span style={styles.infoValue}>Buenos Aires, Argentina</span>
+                <span style={styles.infoValue}>Santa Fe, Argentina</span>
               </div>
             </div>
             
@@ -74,7 +123,7 @@ export default function Contacto() {
             </div>
           </div>
           
-          <form style={styles.form}>
+          <form onSubmit={handleSubmit} style={styles.form}>
             <div style={{
               ...styles.formGrid,
               gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
@@ -88,6 +137,9 @@ export default function Contacto() {
                   name="nombre" 
                   style={styles.input}
                   placeholder="Tu nombre"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  required
                 />
               </div>
               <div style={styles.field}>
@@ -98,6 +150,9 @@ export default function Contacto() {
                   name="email" 
                   style={styles.input}
                   placeholder="tu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
             </div>
@@ -109,13 +164,24 @@ export default function Contacto() {
                 style={styles.textarea}
                 placeholder="Cuéntame sobre tu proyecto..."
                 rows={5}
+                value={mensaje}
+                onChange={(e) => setMensaje(e.target.value)}
+                required
               />
             </div>
-            <button type="submit" style={styles.button}>
-              <span>Enviar Mensaje</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-              </svg>
+            {isSuccess && <p style={styles.successMessage}>¡Mensaje enviado con éxito! Te contactaré pronto.</p>}
+            {isError && <p style={styles.errorMessage}>Ocurrió un error al enviar el mensaje. Por favor, intenta de nuevo más tarde.</p>}
+            <button type="submit" style={styles.button} disabled={isLoading}>
+              {isLoading ? (
+                'Enviando...'
+              ) : (
+                <>
+                  <span>Enviar Mensaje</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                  </svg>
+                </>
+              )}
             </button>
           </form>
         </div>
@@ -330,5 +396,17 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500',
     transition: 'color 0.2s',
+  },
+  successMessage: {
+    color: '#10b981',
+    marginTop: '1rem',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  errorMessage: {
+    color: '#ef4444',
+    marginTop: '1rem',
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
 }
