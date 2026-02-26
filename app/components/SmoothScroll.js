@@ -11,6 +11,7 @@ export default function SmoothScroll({ children }) {
   
   const sections = [
     { id: 'hero', name: 'Inicio' },
+    { id: 'demo', name: 'Demo' }, // Agregada la sección Demo
     { id: 'productos', name: 'Productos' },
     { id: 'servicios', name: 'Servicios' },
     { id: 'proceso', name: 'Proceso' },
@@ -27,6 +28,8 @@ export default function SmoothScroll({ children }) {
       smoothWheel: true,
       wheelMultiplier: 0.8,
       touchMultiplier: 1.5,
+      autoResize: true,   // Añadido para que Lenis se adapte a cambios de layout
+      syncCallbacks: true // Añadido para sincronizar callbacks con el scroll
     })
 
     lenisRef.current = lenis
