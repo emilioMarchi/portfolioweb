@@ -3,25 +3,15 @@ import admin from 'firebase-admin';
 import { getHistory, saveHistory, prepareHistoryForGemini } from '../../../lib/chatbot/historyManager.js';
 import { generateResponse } from '../../../lib/chatbot/responseBuilder.js';
 
-// Inicializar Firebase Admin si no está ya inicializado
-if (!admin.apps.length) {
-  try {
-    const serviceAccount = {
-      project_id: process.env.FIREBASE_PROJECT_ID,
-      private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      client_email: process.env.FIREBASE_CLIENT_EMAIL,
-    };
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      projectId: process.env.FIREBASE_PROJECT_ID,
-    });
-  } catch (error) {
-    console.error('Error initializing Firebase Admin:', error);
-  }
-}
+// 1. Inicializar Firebase Admin solo una vez (se inicializa desde lib/firebase.js)
+// Verificamos si ya está inicializado antes de usarlo
+const isFirebaseInitialized = admin.apps.length > 0;
 
 // GET - Verificar que la ruta funciona
 export async function GET() {
+  if (!isFirebaseInitialized) {
+    return NextResponse.json({ status: 'Error', message: 'Firebase Admin no inicializado' }, { status: 503 });
+  }
   return NextResponse.json({ 
     status: 'OK', 
     message: 'Chatbot API funcionando correctamente'
@@ -30,13 +20,19 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const { userId, clientId, message, apiKey } = await request.json();
+    const { userId, clientId, message, apiKey, clearHistory } = await request.json();
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Falta userId' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Falta userId' }, { status: 400 });
+    }
+    
+    if (!isFirebaseInitialized) {
+        return NextResponse.json({ error: 'Firebase Admin no inicializado en el servidor.' }, { status: 503 });
+    }
+
+    // Si se solicita limpiar el historial, lo borramos antes de procesar
+    if (clearHistory) {
+      await saveHistory(`${userId}_${clientId || 'client1'}`, []);
     }
 
     // Verificar token de Firebase Auth
@@ -44,50 +40,42 @@ export async function POST(request) {
       try {
         const decodedToken = await admin.auth().verifyIdToken(apiKey)
         if (decodedToken.uid !== userId) {
-          return NextResponse.json(
-            { error: 'Token no corresponde al usuario' },
-            { status: 401 }
-          )
+          return NextResponse.json({ error: 'Token no corresponde al usuario' }, { status: 401 });
         }
       } catch (authError) {
         console.warn('Token inválido:', authError.message)
       }
     }
 
-    // Obtener historial
-    const historialActual = await prepareHistoryForGemini(userId);
+    // Obtener historial scopeado por cliente
+    const scopedUserId = `${userId}_${clientId || 'client1'}`;
+    const historialActual = await prepareHistoryForGemini(scopedUserId);
     
     // CASO ESPECIAL: Si no hay mensaje, es una petición de SALUDO INICIAL
     if (!message) {
       if (historialActual.recentMessages.length > 0) {
-        // El usuario ya tiene historial, saludamos reconociéndolo
-        const lastMessage = historialActual.recentMessages[historialActual.recentMessages.length - 1];
-        const contextPrompt = `El usuario ha vuelto al chat. Su historial tiene ${historialActual.totalMessages} mensajes. Salúdalo de forma breve y profesional como OVNI Assistant, reconociendo que ha vuelto.`;
-        
-        const iaResponse = await generateResponse(
-          contextPrompt, 
-          historialActual.recentMessages, 
-          { clientId: clientId || 'client1' },
-          null
-        );
-        
+        // El usuario ya tiene historial, lo devolvemos para que el frontend lo monte
         return NextResponse.json({
-          reply: iaResponse.respuesta,
+          reply: null, // No hay mensaje nuevo, solo history
           isNewUser: false,
           history: historialActual.recentMessages
         });
       } else {
-        // Usuario nuevo, saludo inicial estándar generado por IA
+        // Usuario nuevo o historial limpio, saludo inicial estándar generado por IA
         const iaResponse = await generateResponse(
-          "Genera un saludo inicial creativo, breve y profesional para un nuevo usuario. Preséntate como OVNI Assistant de OVNI Studio. Explica que puedes ayudar con landing pages, automatización e IA.", 
+          "Genera un saludo inicial creativo y breve. Si eres el asistente principal preséntate y ofrece ayuda con automatización e IA. Si eres el diseñador, ve directo al grano y pregunta el nombre del negocio para empezar a diseñar.", 
           [], 
           { clientId: clientId || 'client1' },
           null
         );
         
+        // Guardamos este primer mensaje del bot en el historial para que no se pierda
+        await saveHistory(scopedUserId, [{ role: 'bot', content: iaResponse.respuesta }]);
+        
         return NextResponse.json({
           reply: iaResponse.respuesta,
-          isNewUser: true
+          isNewUser: true,
+          history: [{ role: 'bot', content: iaResponse.respuesta }]
         });
       }
     }
@@ -95,19 +83,16 @@ export async function POST(request) {
     // FLUJO NORMAL: Procesar mensaje del usuario
     const historialParaIA = [...historialActual.recentMessages, { role: 'user', content: message }];
 
-
-    // Generar respuesta directamente (sin intention classifier para evitar llamada extra)
-    // generateResponse ya incluye RAG internamente
     const iaResponse = await generateResponse(
       message, 
         historialParaIA, 
       { clientId: clientId || 'client1' },
-      null // sin summary para evitar llamada extra
+      null
     );
 
-    // Actualizar historial
+    // Actualizar historial scopeado
     const historialFinal = [...historialParaIA, { role: 'bot', content: iaResponse.respuesta }];
-    await saveHistory(userId, historialFinal);
+    await saveHistory(scopedUserId, historialFinal);
 
     return NextResponse.json({
       userText: message,
