@@ -241,7 +241,8 @@ export default function ChatWidget() {
         <div style={{
           ...styles.chatWindow,
           bottom: viewportHeight,
-          maxHeight: chatMaxHeight,
+          height: isMobile ? '64vh' : '420px',
+          maxHeight: isMobile ? '64vh' : '520px',
           width: isMobile ? 'calc(100% - 40px)' : '320px'
         }}>
           <div style={styles.chatHeader}>
@@ -268,7 +269,7 @@ export default function ChatWidget() {
             </button>
           </div>
           
-          <div style={styles.messages}>
+            <div style={{ ...styles.messages, flex: 1, overflowY: 'auto', minHeight: 0 }}>
             {messages.map((msg, index) => (
               <div key={index} style={{ ...styles.messageWrapper, justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
                 {msg.role === 'bot' && (

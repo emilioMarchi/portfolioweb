@@ -192,8 +192,8 @@ export default function DemoGenerator() {
 
       <div style={{ ...styles.workspace, gridTemplateColumns: isMobile ? '1fr' : '1fr 1.5fr', height: isMobile ? 'auto' : '600px' }}>
         {(!isMobile || currentStep === 'chat') && (
-          <div style={{ ...styles.chatPanel, borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', paddingRight: isMobile ? '0' : '20px', height: isMobile ? '500px' : '100%' }}>
-            <div style={styles.chatMessages} ref={chatMessagesRef}>
+        <div style={{ ...styles.chatPanel, borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', paddingRight: isMobile ? '0' : '20px', height: isMobile ? '52vh' : '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <div ref={chatMessagesRef} style={{ ...styles.chatMessages, flex: 1, minHeight: 0 }}>
               {messages.map((msg, i) => (
                 <div key={i} style={{
                   ...styles.messageWrapper,

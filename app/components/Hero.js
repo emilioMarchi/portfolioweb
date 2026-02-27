@@ -32,8 +32,8 @@ export default function Hero() {
           appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
         }
         
-        // Solo inicializar si hay config válida
-        if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+        // Solo inicializar Firebase Auth si hay config válida (vars NEXT_PUBLIC_ en .env.local)
+        if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId) {
           const app = initializeApp(firebaseConfig)
           const auth = getAuth(app)
           
@@ -48,6 +48,7 @@ export default function Hero() {
           setUserId(user.uid)
           setApiKey(token) // Usar token como apiKey
         } else {
+          // Sin config de Firebase en el cliente: usar sesión local (fallback)
           throw new Error('Sin config de Firebase')
         }
       } catch (e) {

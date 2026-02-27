@@ -30,3 +30,8 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+serviceAccountKey.json
+app/api/env-check/route.js
+lib/utils/tokenEstimator.js
+scripts/delete-history-user.js
+scripts/token-telemetry-test.js

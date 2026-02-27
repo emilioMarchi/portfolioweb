@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 if (!process.env.FIREBASE_PROJECT_ID) {
@@ -8,11 +9,26 @@ if (!process.env.FIREBASE_PROJECT_ID) {
 }
 
 if (!admin.apps.length) {
-  const serviceAccount = {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  };
+  // Prefer JSON service account file if present; fallback to env vars
+  let serviceAccount = null;
+  const jsonPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
+  if (fs.existsSync(jsonPath)) {
+    try {
+      const raw = fs.readFileSync(jsonPath, 'utf8');
+      serviceAccount = JSON.parse(raw);
+      console.log('🔎 Using Firebase service account from JSON.');
+    } catch (e) {
+      console.warn('⚠️ Error reading serviceAccountKey.json, falling back to env vars:', e?.message);
+    }
+  }
+
+  if (!serviceAccount) {
+    serviceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    };
+  }
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
